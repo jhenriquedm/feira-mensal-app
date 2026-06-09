@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../models/category_model.dart';
 import '../../models/product_model.dart';
 import '../../viewmodels/products_viewmodel.dart';
 
@@ -18,14 +19,50 @@ class ProductsView extends ConsumerWidget {
       length: 2,
       child: Column(
         children: [
-          const TabBar(
-            labelColor: AppColors.primary,
-            unselectedLabelColor: AppColors.textSecondary,
-            indicatorColor: AppColors.primary,
-            tabs: [
-              Tab(text: 'Produtos'),
-              Tab(text: 'Categorias'),
-            ],
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
+              border: Border(
+                bottom: BorderSide(color: AppColors.border),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Gerenciamento',
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  height: 46,
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: const TabBar(
+                    dividerColor: Colors.transparent,
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    indicator: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.all(Radius.circular(14)),
+                    ),
+                    labelColor: AppColors.primary,
+                    unselectedLabelColor: AppColors.textSecondary,
+                    tabs: [
+                      Tab(text: 'Produtos'),
+                      Tab(text: 'Categorias'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
           Expanded(
             child: TabBarView(
@@ -70,36 +107,90 @@ class _ProductsTab extends StatelessWidget {
 
                 return Card(
                   child: ListTile(
-                    leading: const CircleAvatar(
-                      backgroundColor: Color(0xFFE8F7EE),
+                    leading: CircleAvatar(
+                      backgroundColor: product.isActive
+                          ? const Color(0xFFE8F7EE)
+                          : const Color(0xFFF3F4F6),
                       child: Icon(
                         Icons.shopping_basket_outlined,
-                        color: AppColors.primary,
+                        color: product.isActive
+                            ? AppColors.primary
+                            : AppColors.textSecondary,
                       ),
                     ),
-                    title: Text(product.name),
-                    subtitle: Text(
-                      '${viewModel.getCategoryName(product.categoryId)} • ${product.unit} • ${product.brand ?? ''}',
+                    title: Text(
+                      product.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: product.isActive
+                            ? AppColors.textPrimary
+                            : AppColors.textSecondary,
+                      ),
                     ),
+                    subtitle: Text(
+                      '${viewModel.getCategoryName(product.categoryId)} • ${product.unit} • ${product.brand ?? ''}\n'
+                      '${product.isActive ? 'Ativo' : 'Inativo'}',
+                    ),
+                    isThreeLine: true,
                     trailing: PopupMenuButton<String>(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                       onSelected: (value) {
                         if (value == 'edit') {
-                          _showProductDialog(context, state, viewModel, product: product);
+                          _showProductDialog(
+                            context,
+                            state,
+                            viewModel,
+                            product: product,
+                          );
                         }
 
                         if (value == 'delete') {
+                          if (!viewModel.canDeleteProduct(product.id)) {
+                            _showSuccess(
+                              context,
+                              'Produto não pode ser excluído, pois está vinculado a uma compra.',
+                              isError: true,
+                            );
+                            return;
+                          }
+
                           viewModel.deleteProduct(product.id);
-                          _showSuccess(context, 'Produto excluído com sucesso.');
+                          _showSuccess(
+                            context,
+                            'Produto excluído com sucesso.',
+                          );
                         }
                       },
                       itemBuilder: (context) => const [
                         PopupMenuItem(
                           value: 'edit',
-                          child: Text('Editar'),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.edit_outlined,
+                                size: 20,
+                                color: AppColors.primary,
+                              ),
+                              SizedBox(width: 10),
+                              Text('Editar'),
+                            ],
+                          ),
                         ),
                         PopupMenuItem(
                           value: 'delete',
-                          child: Text('Excluir'),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.delete_outline,
+                                size: 20,
+                                color: AppColors.danger,
+                              ),
+                              SizedBox(width: 10),
+                              Text('Excluir'),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -127,10 +218,9 @@ class _ProductsTab extends StatelessWidget {
 
     String? selectedCategoryId = product?.categoryId;
     String? selectedUnit = product?.unit;
+    bool isActive = product?.isActive ?? true;
 
-    final categories = [...state.categories]
-      ..sort((a, b) => a.name.compareTo(b.name));
-
+    final categories = viewModel.activeCategories;
     final units = [
       'Caixa',
       'g',
@@ -222,6 +312,16 @@ class _ProductsTab extends StatelessWidget {
                             setState(() => selectedUnit = value);
                           },
                         ),
+                        const SizedBox(height: 12),
+                        SwitchListTile(
+                          value: isActive,
+                          activeColor: AppColors.primary,
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(isActive ? 'Ativo' : 'Inativo'),
+                          onChanged: (value) {
+                            setState(() => isActive = value);
+                          },
+                        ),
                       ],
                     ),
                   ),
@@ -229,7 +329,8 @@ class _ProductsTab extends StatelessWidget {
               );
             },
           ),
-          actions: [
+
+                    actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('Cancelar'),
@@ -238,12 +339,28 @@ class _ProductsTab extends StatelessWidget {
               onPressed: () {
                 if (!formKey.currentState!.validate()) return;
 
+                final exists = viewModel.productAlreadyExists(
+                  name: nameController.text,
+                  brand: brandController.text,
+                  ignoreProductId: product?.id,
+                );
+
+                if (exists) {
+                  _showSuccess(
+                    context,
+                    'Já existe um produto com esse nome e marca.',
+                    isError: true,
+                  );
+                  return;
+                }
+
                 if (product == null) {
                   viewModel.addProduct(
                     name: nameController.text,
                     brand: brandController.text,
                     categoryId: selectedCategoryId!,
                     unit: selectedUnit!,
+                    isActive: isActive,
                   );
                   _showSuccess(context, 'Produto cadastrado com sucesso.');
                 } else {
@@ -253,6 +370,7 @@ class _ProductsTab extends StatelessWidget {
                     brand: brandController.text,
                     categoryId: selectedCategoryId!,
                     unit: selectedUnit!,
+                    isActive: isActive,
                   );
                   _showSuccess(context, 'Produto atualizado com sucesso.');
                 }
@@ -289,62 +407,182 @@ class _CategoriesTab extends StatelessWidget {
           crossAxisCount: 2,
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
-          childAspectRatio: 1.45,
+          childAspectRatio: 1.35,
         ),
         itemBuilder: (context, index) {
           final category = categories[index];
 
           return Card(
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.category_outlined,
-                    color: AppColors.primary,
-                    size: 30,
+            child: Stack(
+              children: [
+                Positioned(
+                  top: 6,
+                  right: 6,
+                  child: PopupMenuButton<String>(
+                    padding: EdgeInsets.zero,
+                    iconSize: 20,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        _showCategoryDialog(
+                          context,
+                          viewModel,
+                          category: category,
+                        );
+                      }
+
+                      if (value == 'delete') {
+                        if (!viewModel.canDeleteCategory(category.id)) {
+                          _showSuccess(
+                            context,
+                            'Categoria não pode ser excluída, pois possui produtos vinculados.',
+                            isError: true,
+                          );
+                          return;
+                        }
+
+                        viewModel.deleteCategory(category.id);
+                        _showSuccess(
+                          context,
+                          'Categoria excluída com sucesso.',
+                        );
+                      }
+                    },
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.edit_outlined,
+                              size: 20,
+                              color: AppColors.primary,
+                            ),
+                            SizedBox(width: 10),
+                            Text('Editar'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.delete_outline,
+                              size: 20,
+                              color: AppColors.danger,
+                            ),
+                            SizedBox(width: 10),
+                            Text('Excluir'),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    category.name,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleMedium,
+                ),
+                InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () {
+                    _showCategoryDialog(
+                      context,
+                      viewModel,
+                      category: category,
+                    );
+                  },
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 22, 12, 12),
+                      child: Opacity(
+                        opacity: category.isActive ? 1 : 0.45,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.category_outlined,
+                              color: category.isActive
+                                  ? AppColors.primary
+                                  : AppColors.textSecondary,
+                              size: 28,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              category.name,
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    color: category.isActive
+                                        ? AppColors.textPrimary
+                                        : AppColors.textSecondary,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddCategoryDialog(context, viewModel),
+        onPressed: () => _showCategoryDialog(context, viewModel),
         child: const Icon(Icons.add),
       ),
     );
   }
 
-  void _showAddCategoryDialog(
+  void _showCategoryDialog(
     BuildContext context,
-    ProductsViewModel viewModel,
-  ) {
+    ProductsViewModel viewModel, {
+    CategoryModel? category,
+  }) {
     final formKey = GlobalKey<FormState>();
-    final controller = TextEditingController();
+    final controller = TextEditingController(text: category?.name ?? '');
+    bool isActive = category?.isActive ?? true;
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Nova categoria'),
-          content: Form(
-            key: formKey,
-            child: _premiumTextField(
-              controller: controller,
-              label: 'Nome da categoria',
-              hint: 'Ex: Hortifruti',
-              maxLength: 30,
-              requiredMessage: 'Informe o nome da categoria',
-            ),
+          title: Text(category == null ? 'Nova categoria' : 'Editar categoria'),
+          content: StatefulBuilder(
+            builder: (context, setState) {
+              return Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _premiumTextField(
+                      controller: controller,
+                      label: 'Nome da categoria',
+                      hint: 'Ex: Hortifruti',
+                      maxLength: 30,
+                      requiredMessage: 'Informe o nome da categoria',
+                    ),
+                    const SizedBox(height: 12),
+                    SwitchListTile(
+                      value: isActive,
+                      activeColor: AppColors.primary,
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(isActive ? 'Ativo' : 'Inativo'),
+                      onChanged: (value) {
+                        setState(() => isActive = value);
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
           actions: [
             TextButton(
@@ -355,9 +593,22 @@ class _CategoriesTab extends StatelessWidget {
               onPressed: () {
                 if (!formKey.currentState!.validate()) return;
 
-                viewModel.addCategory(controller.text);
+                if (category == null) {
+                  viewModel.addCategory(
+                    name: controller.text,
+                    isActive: isActive,
+                  );
+                  _showSuccess(context, 'Categoria cadastrada com sucesso.');
+                } else {
+                  viewModel.updateCategory(
+                    id: category.id,
+                    name: controller.text,
+                    isActive: isActive,
+                  );
+                  _showSuccess(context, 'Categoria atualizada com sucesso.');
+                }
+
                 Navigator.pop(context);
-                _showSuccess(context, 'Categoria cadastrada com sucesso.');
               },
               child: const Text('Salvar'),
             ),
@@ -432,16 +683,30 @@ InputDecoration _inputDecoration(String label) {
   );
 }
 
-void _showSuccess(BuildContext context, String message) {
+void _showSuccess(
+  BuildContext context,
+  String message, {
+  bool isError = false,
+}) {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
-      content: Text(message),
-      behavior: SnackBarBehavior.floating,
-      margin: const EdgeInsets.fromLTRB(18, 0, 18, 18),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+      content: Center(
+        heightFactor: 1,
+        child: Text(
+          message,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
-      backgroundColor: AppColors.success,
+      behavior: SnackBarBehavior.floating,
+      margin: const EdgeInsets.fromLTRB(28, 0, 28, 22),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+      ),
+      backgroundColor: isError ? AppColors.danger : AppColors.success,
+      duration: const Duration(seconds: 2),
     ),
   );
 }

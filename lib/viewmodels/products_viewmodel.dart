@@ -34,12 +34,36 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
       : super(
           const ProductsState(
             categories: [
-              CategoryModel(id: 'bebidas', name: 'Bebidas', iconName: 'bebidas'),
-              CategoryModel(id: 'carnes', name: 'Carnes', iconName: 'carnes'),
-              CategoryModel(id: 'cereais', name: 'Cereais', iconName: 'cereais'),
-              CategoryModel(id: 'higiene', name: 'Higiene pessoal', iconName: 'higiene'),
-              CategoryModel(id: 'limpeza', name: 'Produtos de limpeza', iconName: 'limpeza'),
-              CategoryModel(id: 'outros', name: 'Outros', iconName: 'outros'),
+              CategoryModel(
+                id: 'bebidas',
+                name: 'Bebidas',
+                iconName: 'bebidas',
+              ),
+              CategoryModel(
+                id: 'carnes',
+                name: 'Carnes',
+                iconName: 'carnes',
+              ),
+              CategoryModel(
+                id: 'cereais',
+                name: 'Cereais',
+                iconName: 'cereais',
+              ),
+              CategoryModel(
+                id: 'higiene',
+                name: 'Higiene pessoal',
+                iconName: 'higiene',
+              ),
+              CategoryModel(
+                id: 'limpeza',
+                name: 'Produtos de limpeza',
+                iconName: 'limpeza',
+              ),
+              CategoryModel(
+                id: 'outros',
+                name: 'Outros',
+                iconName: 'outros',
+              ),
             ],
             products: [],
           ),
@@ -53,20 +77,81 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
     return list;
   }
 
+  List<CategoryModel> get activeCategories {
+    final list = state.categories.where((category) => category.isActive).toList();
+    list.sort((a, b) => a.name.compareTo(b.name));
+    return list;
+  }
+
   List<ProductModel> get sortedProducts {
     final list = [...state.products];
     list.sort((a, b) => a.name.compareTo(b.name));
     return list;
   }
 
-  void addCategory(String name) {
+  bool productAlreadyExists({
+    required String name,
+    required String brand,
+    String? ignoreProductId,
+  }) {
+    final normalizedName = _normalize(name);
+    final normalizedBrand = _normalize(brand);
+
+    return state.products.any((product) {
+      final sameName = _normalize(product.name) == normalizedName;
+      final sameBrand = _normalize(product.brand ?? '') == normalizedBrand;
+      final isSameEditingProduct =
+          ignoreProductId != null && product.id == ignoreProductId;
+
+      return sameName && sameBrand && !isSameEditingProduct;
+    });
+  }
+
+  void addCategory({
+    required String name,
+    required bool isActive,
+  }) {
     final category = CategoryModel(
       id: _uuid.v4(),
       name: name.trim(),
       iconName: 'custom',
+      isActive: isActive,
     );
 
-    state = state.copyWith(categories: [...state.categories, category]);
+    state = state.copyWith(
+      categories: [...state.categories, category],
+    );
+  }
+
+  void updateCategory({
+    required String id,
+    required String name,
+    required bool isActive,
+  }) {
+    final updatedCategories = state.categories.map((category) {
+      if (category.id != id) return category;
+
+      return CategoryModel(
+        id: category.id,
+        name: name.trim(),
+        iconName: category.iconName,
+        isActive: isActive,
+      );
+    }).toList();
+
+    state = state.copyWith(categories: updatedCategories);
+  }
+
+  bool canDeleteCategory(String categoryId) {
+    return !state.products.any((product) => product.categoryId == categoryId);
+  }
+
+  void deleteCategory(String categoryId) {
+    state = state.copyWith(
+      categories: state.categories
+          .where((category) => category.id != categoryId)
+          .toList(),
+    );
   }
 
   void addProduct({
@@ -74,6 +159,7 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
     required String categoryId,
     required String unit,
     required String brand,
+    required bool isActive,
   }) {
     final product = ProductModel(
       id: _uuid.v4(),
@@ -81,9 +167,12 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
       categoryId: categoryId,
       unit: unit,
       brand: brand.trim(),
+      isActive: isActive,
     );
 
-    state = state.copyWith(products: [...state.products, product]);
+    state = state.copyWith(
+      products: [...state.products, product],
+    );
   }
 
   void updateProduct({
@@ -92,6 +181,7 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
     required String categoryId,
     required String unit,
     required String brand,
+    required bool isActive,
   }) {
     final updatedProducts = state.products.map((product) {
       if (product.id != id) return product;
@@ -103,10 +193,16 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
         unit: unit,
         brand: brand.trim(),
         lastPrice: product.lastPrice,
+        isActive: isActive,
       );
     }).toList();
 
     state = state.copyWith(products: updatedProducts);
+  }
+
+  bool canDeleteProduct(String productId) {
+    // Futuramente: verificar se o produto está vinculado a alguma compra.
+    return true;
   }
 
   void deleteProduct(String id) {
@@ -126,5 +222,9 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
           ),
         )
         .name;
+  }
+
+  String _normalize(String value) {
+    return value.trim().toLowerCase();
   }
 }

@@ -42,7 +42,7 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _selectedIndex == 0
+      appBar: _selectedIndex == 0 || _selectedIndex == 1
           ? null
           : AppBar(
               title: Text(_titles[_selectedIndex]),

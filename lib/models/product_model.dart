@@ -5,6 +5,7 @@ class ProductModel {
   final String unit;
   final String? brand;
   final double? lastPrice;
+  final bool isActive;
 
   const ProductModel({
     required this.id,
@@ -13,5 +14,6 @@ class ProductModel {
     required this.unit,
     this.brand,
     this.lastPrice,
+    this.isActive = true,
   });
 }
