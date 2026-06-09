@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'core/theme/app_theme.dart';
 import 'views/home/home_view.dart';
+import 'widgets/app_mobile_frame.dart';
 
 class FeiraMensalApp extends StatelessWidget {
   const FeiraMensalApp({super.key});
@@ -10,11 +12,10 @@ class FeiraMensalApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Feira Mensal',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: Colors.green,
+      theme: AppTheme.lightTheme,
+      home: const AppMobileFrame(
+        child: HomeView(),
       ),
-      home: const HomeView(),
     );
   }
 }
