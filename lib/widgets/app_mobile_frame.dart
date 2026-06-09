@@ -5,10 +5,7 @@ import '../core/theme/app_colors.dart';
 class AppMobileFrame extends StatelessWidget {
   final Widget child;
 
-  const AppMobileFrame({
-    super.key,
-    required this.child,
-  });
+  const AppMobileFrame({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -26,17 +23,11 @@ class AppMobileFrame extends StatelessWidget {
           child: Container(
             width: 420,
             height: constraints.maxHeight * 0.94,
-            constraints: const BoxConstraints(
-              maxHeight: 900,
-              minHeight: 640,
-            ),
+            constraints: const BoxConstraints(maxHeight: 900, minHeight: 640),
             decoration: BoxDecoration(
               color: AppColors.background,
               borderRadius: BorderRadius.circular(36),
-              border: Border.all(
-                color: AppColors.border,
-                width: 1.4,
-              ),
+              border: Border.all(color: AppColors.border, width: 1.4),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.15),

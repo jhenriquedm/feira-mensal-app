@@ -24,9 +24,7 @@ class ProductsView extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
             decoration: const BoxDecoration(
               color: AppColors.surface,
-              border: Border(
-                bottom: BorderSide(color: AppColors.border),
-              ),
+              border: Border(bottom: BorderSide(color: AppColors.border)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -34,9 +32,9 @@ class ProductsView extends ConsumerWidget {
                 Text(
                   'Gerenciamento',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 14),
                 Container(
@@ -82,10 +80,7 @@ class _ProductsTab extends StatelessWidget {
   final ProductsState state;
   final ProductsViewModel viewModel;
 
-  const _ProductsTab({
-    required this.state,
-    required this.viewModel,
-  });
+  const _ProductsTab({required this.state, required this.viewModel});
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +96,7 @@ class _ProductsTab extends StatelessWidget {
           : ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: products.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
                 final product = products[index];
 
@@ -221,15 +216,7 @@ class _ProductsTab extends StatelessWidget {
     bool isActive = product?.isActive ?? true;
 
     final categories = viewModel.activeCategories;
-    final units = [
-      'Caixa',
-      'g',
-      'Kg',
-      'Litro',
-      'ml',
-      'Pacote',
-      'Unidade',
-    ];
+    final units = ['Caixa', 'g', 'Kg', 'Litro', 'ml', 'Pacote', 'Unidade'];
 
     showDialog(
       context: context,
@@ -263,7 +250,7 @@ class _ProductsTab extends StatelessWidget {
                         ),
                         const SizedBox(height: 12),
                         DropdownButtonFormField<String>(
-                          value: selectedCategoryId,
+                          initialValue: selectedCategoryId,
                           isExpanded: true,
                           menuMaxHeight: 260,
                           dropdownColor: AppColors.surface,
@@ -290,7 +277,7 @@ class _ProductsTab extends StatelessWidget {
                         ),
                         const SizedBox(height: 12),
                         DropdownButtonFormField<String>(
-                          value: selectedUnit,
+                          initialValue: selectedUnit,
                           isExpanded: true,
                           menuMaxHeight: 260,
                           dropdownColor: AppColors.surface,
@@ -315,7 +302,10 @@ class _ProductsTab extends StatelessWidget {
                         const SizedBox(height: 12),
                         SwitchListTile(
                           value: isActive,
-                          activeColor: AppColors.primary,
+                          activeThumbColor: AppColors.primary,
+                          activeTrackColor: AppColors.primary.withValues(
+                            alpha: 0.35,
+                          ),
                           contentPadding: EdgeInsets.zero,
                           title: Text(isActive ? 'Ativo' : 'Inativo'),
                           onChanged: (value) {
@@ -330,7 +320,7 @@ class _ProductsTab extends StatelessWidget {
             },
           ),
 
-                    actions: [
+          actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('Cancelar'),
@@ -390,10 +380,7 @@ class _CategoriesTab extends StatelessWidget {
   final ProductsState state;
   final ProductsViewModel viewModel;
 
-  const _CategoriesTab({
-    required this.state,
-    required this.viewModel,
-  });
+  const _CategoriesTab({required this.state, required this.viewModel});
 
   @override
   Widget build(BuildContext context) {
@@ -485,11 +472,7 @@ class _CategoriesTab extends StatelessWidget {
                 InkWell(
                   borderRadius: BorderRadius.circular(20),
                   onTap: () {
-                    _showCategoryDialog(
-                      context,
-                      viewModel,
-                      category: category,
-                    );
+                    _showCategoryDialog(context, viewModel, category: category);
                   },
                   child: Center(
                     child: Padding(
@@ -512,9 +495,7 @@ class _CategoriesTab extends StatelessWidget {
                               textAlign: TextAlign.center,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
+                              style: Theme.of(context).textTheme.titleMedium
                                   ?.copyWith(
                                     color: category.isActive
                                         ? AppColors.textPrimary
@@ -572,7 +553,10 @@ class _CategoriesTab extends StatelessWidget {
                     const SizedBox(height: 12),
                     SwitchListTile(
                       value: isActive,
-                      activeColor: AppColors.primary,
+                      activeThumbColor: AppColors.primary,
+                      activeTrackColor: AppColors.primary.withValues(
+                        alpha: 0.35,
+                      ),
                       contentPadding: EdgeInsets.zero,
                       title: Text(isActive ? 'Ativo' : 'Inativo'),
                       onChanged: (value) {
@@ -630,14 +614,11 @@ Widget _premiumTextField({
     controller: controller,
     maxLength: maxLength,
     inputFormatters: [
-      FilteringTextInputFormatter.allow(
-        RegExp(r'[a-zA-ZÀ-ÿ0-9 ]'),
-      ),
+      FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZÀ-ÿ0-9 ]')),
     ],
-    decoration: _inputDecoration(label).copyWith(
-      hintText: hint,
-      counterText: '',
-    ),
+    decoration: _inputDecoration(
+      label,
+    ).copyWith(hintText: hint, counterText: ''),
     validator: (value) {
       if (value == null || value.trim().isEmpty) {
         return requiredMessage;
@@ -652,33 +633,22 @@ InputDecoration _inputDecoration(String label) {
     labelText: label,
     filled: true,
     fillColor: AppColors.background,
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(16),
-    ),
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
       borderSide: const BorderSide(color: AppColors.border),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: const BorderSide(
-        color: AppColors.primary,
-        width: 1.6,
-      ),
+      borderSide: const BorderSide(color: AppColors.primary, width: 1.6),
     ),
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: const BorderSide(
-        color: AppColors.danger,
-        width: 1.4,
-      ),
+      borderSide: const BorderSide(color: AppColors.danger, width: 1.4),
     ),
     focusedErrorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: const BorderSide(
-        color: AppColors.danger,
-        width: 1.6,
-      ),
+      borderSide: const BorderSide(color: AppColors.danger, width: 1.6),
     ),
   );
 }
@@ -695,16 +665,12 @@ void _showSuccess(
         child: Text(
           message,
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
       behavior: SnackBarBehavior.floating,
       margin: const EdgeInsets.fromLTRB(28, 0, 28, 22),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       backgroundColor: isError ? AppColors.danger : AppColors.success,
       duration: const Duration(seconds: 2),
     ),

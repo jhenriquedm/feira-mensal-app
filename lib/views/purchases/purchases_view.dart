@@ -7,7 +7,8 @@ class PurchasesView extends StatelessWidget {
   Widget build(BuildContext context) {
     return const _PlaceholderView(
       title: 'Compras',
-      subtitle: 'Registre suas feiras mensais e acompanhe o total em tempo real.',
+      subtitle:
+          'Registre suas feiras mensais e acompanhe o total em tempo real.',
       icon: Icons.receipt_long_outlined,
     );
   }

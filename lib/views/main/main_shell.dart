@@ -44,9 +44,7 @@ class _MainShellState extends State<MainShell> {
     return Scaffold(
       appBar: _selectedIndex == 0 || _selectedIndex == 1
           ? null
-          : AppBar(
-              title: Text(_titles[_selectedIndex]),
-            ),
+          : AppBar(title: Text(_titles[_selectedIndex])),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 250),
         switchInCurve: Curves.easeOut,
@@ -65,20 +63,14 @@ class _MainShellState extends State<MainShell> {
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
       decoration: const BoxDecoration(
         color: AppColors.surface,
-        border: Border(
-          top: BorderSide(color: AppColors.border),
-        ),
+        border: Border(top: BorderSide(color: AppColors.border)),
       ),
       child: SafeArea(
         top: false,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _navItem(
-              index: 0,
-              icon: Icons.home_rounded,
-              label: 'Home',
-            ),
+            _navItem(index: 0, icon: Icons.home_rounded, label: 'Home'),
             _navItem(
               index: 1,
               icon: Icons.shopping_basket_rounded,
@@ -94,11 +86,7 @@ class _MainShellState extends State<MainShell> {
               icon: Icons.bar_chart_rounded,
               label: 'Relatórios',
             ),
-            _navItem(
-              index: 4,
-              icon: Icons.settings_rounded,
-              label: 'Ajustes',
-            ),
+            _navItem(index: 4, icon: Icons.settings_rounded, label: 'Ajustes'),
           ],
         ),
       ),
@@ -118,10 +106,7 @@ class _MainShellState extends State<MainShell> {
         onTap: () => _onTap(index),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 220),
-          padding: const EdgeInsets.symmetric(
-            vertical: 9,
-            horizontal: 6,
-          ),
+          padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 6),
           decoration: BoxDecoration(
             color: isSelected
                 ? AppColors.primary.withValues(alpha: 0.12)
@@ -134,9 +119,7 @@ class _MainShellState extends State<MainShell> {
               Icon(
                 icon,
                 size: 23,
-                color: isSelected
-                    ? AppColors.primary
-                    : AppColors.textSecondary,
+                color: isSelected ? AppColors.primary : AppColors.textSecondary,
               ),
               const SizedBox(height: 4),
               Text(

@@ -57,10 +57,7 @@ class HomeView extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            AppColors.primary,
-            AppColors.primaryDark,
-          ],
+          colors: [AppColors.primary, AppColors.primaryDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -88,11 +85,7 @@ class HomeView extends StatelessWidget {
           SizedBox(height: 10),
           Text(
             'Organize produtos, acompanhe gastos e compare preços mês a mês.',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 15,
-              height: 1.5,
-            ),
+            style: TextStyle(color: Colors.white70, fontSize: 15, height: 1.5),
           ),
         ],
       ),
@@ -102,29 +95,14 @@ class HomeView extends StatelessWidget {
   Widget _buildSummaryCard(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 18,
-          vertical: 20,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
         child: Row(
           children: [
-            _summaryItem(
-              context,
-              title: 'Mês atual',
-              value: 'R\$ 0,00',
-            ),
+            _summaryItem(context, title: 'Mês atual', value: 'R\$ 0,00'),
             _divider(),
-            _summaryItem(
-              context,
-              title: 'Itens',
-              value: '0',
-            ),
+            _summaryItem(context, title: 'Itens', value: '0'),
             _divider(),
-            _summaryItem(
-              context,
-              title: 'Categorias',
-              value: '0',
-            ),
+            _summaryItem(context, title: 'Categorias', value: '0'),
           ],
         ),
       ),
@@ -141,9 +119,9 @@ class HomeView extends StatelessWidget {
         children: [
           Text(
             value,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 6),
           Text(
@@ -157,10 +135,6 @@ class HomeView extends StatelessWidget {
   }
 
   Widget _divider() {
-    return Container(
-      height: 38,
-      width: 1,
-      color: AppColors.border,
-    );
+    return Container(height: 38, width: 1, color: AppColors.border);
   }
 }

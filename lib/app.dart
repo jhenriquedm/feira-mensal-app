@@ -13,9 +13,7 @@ class FeiraMensalApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Feira Mensal',
       theme: AppTheme.lightTheme,
-      home: const AppMobileFrame(
-        child: MainShell(),
-      ),
+      home: const AppMobileFrame(child: MainShell()),
     );
   }
 }

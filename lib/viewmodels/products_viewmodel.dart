@@ -6,17 +6,14 @@ import '../models/product_model.dart';
 
 final productsProvider =
     StateNotifierProvider<ProductsViewModel, ProductsState>((ref) {
-  return ProductsViewModel();
-});
+      return ProductsViewModel();
+    });
 
 class ProductsState {
   final List<CategoryModel> categories;
   final List<ProductModel> products;
 
-  const ProductsState({
-    required this.categories,
-    required this.products,
-  });
+  const ProductsState({required this.categories, required this.products});
 
   ProductsState copyWith({
     List<CategoryModel>? categories,
@@ -31,43 +28,27 @@ class ProductsState {
 
 class ProductsViewModel extends StateNotifier<ProductsState> {
   ProductsViewModel()
-      : super(
-          const ProductsState(
-            categories: [
-              CategoryModel(
-                id: 'bebidas',
-                name: 'Bebidas',
-                iconName: 'bebidas',
-              ),
-              CategoryModel(
-                id: 'carnes',
-                name: 'Carnes',
-                iconName: 'carnes',
-              ),
-              CategoryModel(
-                id: 'cereais',
-                name: 'Cereais',
-                iconName: 'cereais',
-              ),
-              CategoryModel(
-                id: 'higiene',
-                name: 'Higiene pessoal',
-                iconName: 'higiene',
-              ),
-              CategoryModel(
-                id: 'limpeza',
-                name: 'Produtos de limpeza',
-                iconName: 'limpeza',
-              ),
-              CategoryModel(
-                id: 'outros',
-                name: 'Outros',
-                iconName: 'outros',
-              ),
-            ],
-            products: [],
-          ),
-        );
+    : super(
+        const ProductsState(
+          categories: [
+            CategoryModel(id: 'bebidas', name: 'Bebidas', iconName: 'bebidas'),
+            CategoryModel(id: 'carnes', name: 'Carnes', iconName: 'carnes'),
+            CategoryModel(id: 'cereais', name: 'Cereais', iconName: 'cereais'),
+            CategoryModel(
+              id: 'higiene',
+              name: 'Higiene pessoal',
+              iconName: 'higiene',
+            ),
+            CategoryModel(
+              id: 'limpeza',
+              name: 'Produtos de limpeza',
+              iconName: 'limpeza',
+            ),
+            CategoryModel(id: 'outros', name: 'Outros', iconName: 'outros'),
+          ],
+          products: [],
+        ),
+      );
 
   final _uuid = const Uuid();
 
@@ -78,7 +59,9 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
   }
 
   List<CategoryModel> get activeCategories {
-    final list = state.categories.where((category) => category.isActive).toList();
+    final list = state.categories
+        .where((category) => category.isActive)
+        .toList();
     list.sort((a, b) => a.name.compareTo(b.name));
     return list;
   }
@@ -107,10 +90,7 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
     });
   }
 
-  void addCategory({
-    required String name,
-    required bool isActive,
-  }) {
+  void addCategory({required String name, required bool isActive}) {
     final category = CategoryModel(
       id: _uuid.v4(),
       name: name.trim(),
@@ -118,9 +98,7 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
       isActive: isActive,
     );
 
-    state = state.copyWith(
-      categories: [...state.categories, category],
-    );
+    state = state.copyWith(categories: [...state.categories, category]);
   }
 
   void updateCategory({
@@ -170,9 +148,7 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
       isActive: isActive,
     );
 
-    state = state.copyWith(
-      products: [...state.products, product],
-    );
+    state = state.copyWith(products: [...state.products, product]);
   }
 
   void updateProduct({
