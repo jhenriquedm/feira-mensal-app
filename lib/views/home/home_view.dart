@@ -9,44 +9,43 @@ class HomeView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Feira Mensal'),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(context),
-            const SizedBox(height: 24),
-            _buildSummaryCard(context),
-            const SizedBox(height: 24),
-            Text(
-              'Acessos rápidos',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 12),
-            AppFeatureCard(
-              title: 'Produtos',
-              subtitle: 'Cadastre e organize itens do mercado',
-              icon: Icons.shopping_basket_outlined,
-              onTap: () {},
-            ),
-            const SizedBox(height: 12),
-            AppFeatureCard(
-              title: 'Compras',
-              subtitle: 'Registre sua feira mensal em tempo real',
-              icon: Icons.receipt_long_outlined,
-              onTap: () {},
-            ),
-            const SizedBox(height: 12),
-            AppFeatureCard(
-              title: 'Relatórios',
-              subtitle: 'Acompanhe gastos, categorias e histórico',
-              icon: Icons.bar_chart_rounded,
-              onTap: () {},
-            ),
-          ],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(context),
+              const SizedBox(height: 24),
+              _buildSummaryCard(context),
+              const SizedBox(height: 28),
+              Text(
+                'Acessos rápidos',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 14),
+              AppFeatureCard(
+                title: 'Produtos',
+                subtitle: 'Cadastre e organize itens do mercado',
+                icon: Icons.shopping_basket_outlined,
+                onTap: () {},
+              ),
+              const SizedBox(height: 12),
+              AppFeatureCard(
+                title: 'Compras',
+                subtitle: 'Registre sua feira mensal',
+                icon: Icons.receipt_long_outlined,
+                onTap: () {},
+              ),
+              const SizedBox(height: 12),
+              AppFeatureCard(
+                title: 'Relatórios',
+                subtitle: 'Acompanhe gastos e evolução',
+                icon: Icons.bar_chart_rounded,
+                onTap: () {},
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -55,7 +54,7 @@ class HomeView extends StatelessWidget {
   Widget _buildHeader(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [
@@ -83,15 +82,16 @@ class HomeView extends StatelessWidget {
               color: Colors.white,
               fontSize: 26,
               fontWeight: FontWeight.w800,
+              height: 1.2,
             ),
           ),
-          SizedBox(height: 8),
+          SizedBox(height: 10),
           Text(
             'Organize produtos, acompanhe gastos e compare preços mês a mês.',
             style: TextStyle(
               color: Colors.white70,
               fontSize: 15,
-              height: 1.4,
+              height: 1.5,
             ),
           ),
         ],
@@ -102,7 +102,10 @@ class HomeView extends StatelessWidget {
   Widget _buildSummaryCard(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 20,
+        ),
         child: Row(
           children: [
             _summaryItem(
@@ -138,11 +141,14 @@ class HomeView extends StatelessWidget {
         children: [
           Text(
             value,
-            style: Theme.of(context).textTheme.titleMedium,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             title,
+            textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
@@ -152,7 +158,7 @@ class HomeView extends StatelessWidget {
 
   Widget _divider() {
     return Container(
-      height: 36,
+      height: 38,
       width: 1,
       color: AppColors.border,
     );

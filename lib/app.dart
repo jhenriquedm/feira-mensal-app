@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'core/theme/app_theme.dart';
-import 'views/home/home_view.dart';
+import 'views/main/main_shell.dart';
 import 'widgets/app_mobile_frame.dart';
 
 class FeiraMensalApp extends StatelessWidget {
@@ -14,7 +14,7 @@ class FeiraMensalApp extends StatelessWidget {
       title: 'Feira Mensal',
       theme: AppTheme.lightTheme,
       home: const AppMobileFrame(
-        child: HomeView(),
+        child: MainShell(),
       ),
     );
   }
