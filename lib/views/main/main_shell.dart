@@ -34,26 +34,26 @@ class _MainShellState extends State<MainShell> {
   ];
 
   void _onTap(int index) {
+    if (_selectedIndex == index) {
+      return;
+    }
+
     setState(() {
       _selectedIndex = index;
     });
   }
 
+  bool get _shouldHideAppBar {
+    return _selectedIndex == 0 || _selectedIndex == 1 || _selectedIndex == 2;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _selectedIndex == 0 || _selectedIndex == 1
+      appBar: _shouldHideAppBar
           ? null
           : AppBar(title: Text(_titles[_selectedIndex])),
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 250),
-        switchInCurve: Curves.easeOut,
-        switchOutCurve: Curves.easeIn,
-        child: KeyedSubtree(
-          key: ValueKey<int>(_selectedIndex),
-          child: _pages[_selectedIndex],
-        ),
-      ),
+      body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: _buildBottomNavigation(),
     );
   }

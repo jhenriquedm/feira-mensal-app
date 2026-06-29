@@ -36,7 +36,9 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
   List<PurchaseModel> get sortedPurchases {
     final purchases = [...state.purchases];
 
-    purchases.sort((first, second) => second.date.compareTo(first.date));
+    purchases.sort((first, second) {
+      return second.date.compareTo(first.date);
+    });
 
     return purchases;
   }
@@ -90,7 +92,7 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
       items: const [],
     );
 
-    state = state.copyWith(purchases: [...state.purchases, purchase]);
+    _emitPurchases([...state.purchases, purchase]);
   }
 
   void updatePurchase({
@@ -116,7 +118,7 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
       );
     }).toList();
 
-    state = state.copyWith(purchases: updatedPurchases);
+    _emitPurchases(updatedPurchases);
   }
 
   bool canDeletePurchase(String purchaseId) {
@@ -130,11 +132,11 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
   }
 
   void deletePurchase(String purchaseId) {
-    state = state.copyWith(
-      purchases: state.purchases
-          .where((purchase) => purchase.id != purchaseId)
-          .toList(),
-    );
+    final updatedPurchases = state.purchases
+        .where((purchase) => purchase.id != purchaseId)
+        .toList();
+
+    _emitPurchases(updatedPurchases);
   }
 
   void completePurchase(String purchaseId) {
@@ -211,7 +213,7 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
       return currentPurchase.copyWith(items: [...currentPurchase.items, item]);
     }).toList();
 
-    state = state.copyWith(purchases: updatedPurchases);
+    _emitPurchases(updatedPurchases);
 
     return true;
   }
@@ -281,9 +283,11 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
   }
 
   bool isProductLinked(String productId) {
-    return state.purchases.any(
-      (purchase) => purchase.items.any((item) => item.productId == productId),
-    );
+    return state.purchases.any((purchase) {
+      return purchase.items.any((item) {
+        return item.productId == productId;
+      });
+    });
   }
 
   void _updatePurchaseStatus({
@@ -298,15 +302,27 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
       return purchase.copyWith(status: status);
     }).toList();
 
-    state = state.copyWith(purchases: updatedPurchases);
+    _emitPurchases(updatedPurchases);
   }
 
   void _replacePurchase(PurchaseModel updatedPurchase) {
     final updatedPurchases = state.purchases.map((purchase) {
-      return purchase.id == updatedPurchase.id ? updatedPurchase : purchase;
+      if (purchase.id == updatedPurchase.id) {
+        return updatedPurchase;
+      }
+
+      return purchase;
     }).toList();
 
-    state = state.copyWith(purchases: updatedPurchases);
+    _emitPurchases(updatedPurchases);
+  }
+
+  void _emitPurchases(List<PurchaseModel> purchases) {
+    if (!mounted) {
+      return;
+    }
+
+    state = state.copyWith(purchases: List.unmodifiable(purchases));
   }
 
   bool _isSameDay(DateTime first, DateTime second) {
