@@ -293,6 +293,10 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
     });
   }
 
+  void clearAllPurchases() {
+    _emitPurchases(const []);
+  }
+
   Future<void> _loadSavedPurchases() async {
     final savedPurchases = await LocalStorageService.loadPurchases();
 

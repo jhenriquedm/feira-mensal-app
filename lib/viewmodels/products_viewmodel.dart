@@ -5,6 +5,19 @@ import '../models/category_model.dart';
 import '../models/product_model.dart';
 import '../services/local_storage_service.dart';
 
+const List<CategoryModel> defaultCategories = [
+  CategoryModel(id: 'bebidas', name: 'Bebidas', iconName: 'bebidas'),
+  CategoryModel(id: 'carnes', name: 'Carnes', iconName: 'carnes'),
+  CategoryModel(id: 'cereais', name: 'Cereais', iconName: 'cereais'),
+  CategoryModel(id: 'higiene', name: 'Higiene pessoal', iconName: 'higiene'),
+  CategoryModel(
+    id: 'limpeza',
+    name: 'Produtos de limpeza',
+    iconName: 'limpeza',
+  ),
+  CategoryModel(id: 'outros', name: 'Outros', iconName: 'outros'),
+];
+
 final productsProvider =
     StateNotifierProvider<ProductsViewModel, ProductsState>((ref) {
       return ProductsViewModel();
@@ -29,27 +42,7 @@ class ProductsState {
 
 class ProductsViewModel extends StateNotifier<ProductsState> {
   ProductsViewModel()
-    : super(
-        const ProductsState(
-          categories: [
-            CategoryModel(id: 'bebidas', name: 'Bebidas', iconName: 'bebidas'),
-            CategoryModel(id: 'carnes', name: 'Carnes', iconName: 'carnes'),
-            CategoryModel(id: 'cereais', name: 'Cereais', iconName: 'cereais'),
-            CategoryModel(
-              id: 'higiene',
-              name: 'Higiene pessoal',
-              iconName: 'higiene',
-            ),
-            CategoryModel(
-              id: 'limpeza',
-              name: 'Produtos de limpeza',
-              iconName: 'limpeza',
-            ),
-            CategoryModel(id: 'outros', name: 'Outros', iconName: 'outros'),
-          ],
-          products: [],
-        ),
-      ) {
+    : super(const ProductsState(categories: defaultCategories, products: [])) {
     _loadSavedProductsData();
   }
 
@@ -230,6 +223,31 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
     _emitState(state.copyWith(products: updatedProducts));
   }
 
+  void resetProductsAndCategories() {
+    _emitState(
+      const ProductsState(categories: defaultCategories, products: []),
+    );
+  }
+
+  void restoreDefaultCategories() {
+    final updatedCategories = [...state.categories];
+
+    for (final defaultCategory in defaultCategories) {
+      final index = updatedCategories.indexWhere((category) {
+        return category.id == defaultCategory.id;
+      });
+
+      if (index == -1) {
+        updatedCategories.add(defaultCategory);
+        continue;
+      }
+
+      updatedCategories[index] = defaultCategory.copyWith(isActive: true);
+    }
+
+    _emitState(state.copyWith(categories: updatedCategories));
+  }
+
   String getCategoryName(String categoryId) {
     return state.categories
         .firstWhere(
@@ -250,8 +268,12 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
       return;
     }
 
+    final categories = savedData.categories.isEmpty
+        ? defaultCategories
+        : savedData.categories;
+
     state = ProductsState(
-      categories: List.unmodifiable(savedData.categories),
+      categories: List.unmodifiable(categories),
       products: List.unmodifiable(savedData.products),
     );
   }

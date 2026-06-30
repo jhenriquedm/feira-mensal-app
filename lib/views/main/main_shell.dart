@@ -25,14 +25,6 @@ class _MainShellState extends State<MainShell> {
     SettingsView(),
   ];
 
-  final List<String> _titles = const [
-    'Feira Mensal',
-    'Produtos',
-    'Compras',
-    'Relatórios',
-    'Configurações',
-  ];
-
   void _onTap(int index) {
     if (_selectedIndex == index) {
       return;
@@ -43,19 +35,10 @@ class _MainShellState extends State<MainShell> {
     });
   }
 
-  bool get _shouldHideAppBar {
-    return _selectedIndex == 0 ||
-        _selectedIndex == 1 ||
-        _selectedIndex == 2 ||
-        _selectedIndex == 3;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _shouldHideAppBar
-          ? null
-          : AppBar(title: Text(_titles[_selectedIndex])),
+      appBar: null,
       body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: _buildBottomNavigation(),
     );
