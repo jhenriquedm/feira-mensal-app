@@ -19,6 +19,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
   _SettingsConfirmationAction? _confirmationAction;
   String? _feedbackMessage;
   bool _feedbackIsError = false;
+  bool _isConfirmingAction = false;
   Timer? _feedbackTimer;
 
   @override
@@ -52,13 +53,19 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
                 children: [
-                  if (_feedbackMessage != null) ...[
-                    _SettingsFeedback(
-                      message: _feedbackMessage!,
-                      isError: _feedbackIsError,
-                    ),
-                    const SizedBox(height: 14),
-                  ],
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    child: _feedbackMessage == null
+                        ? const SizedBox.shrink()
+                        : Padding(
+                            key: ValueKey<String>(_feedbackMessage!),
+                            padding: const EdgeInsets.only(bottom: 14),
+                            child: _SettingsFeedback(
+                              message: _feedbackMessage!,
+                              isError: _feedbackIsError,
+                            ),
+                          ),
+                  ),
                   if (currentUser != null) ...[
                     _CurrentUserCard(
                       name: currentUser.name,
@@ -87,10 +94,10 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                             alpha: 0.10,
                           ),
                           onTap: () {
-                            setState(() {
-                              _confirmationAction = _SettingsConfirmationAction
-                                  .restoreDefaultCategories;
-                            });
+                            _openConfirmation(
+                              _SettingsConfirmationAction
+                                  .restoreDefaultCategories,
+                            );
                           },
                         ),
                         const SizedBox(height: 12),
@@ -104,10 +111,9 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                             alpha: 0.10,
                           ),
                           onTap: () {
-                            setState(() {
-                              _confirmationAction =
-                                  _SettingsConfirmationAction.clearAllData;
-                            });
+                            _openConfirmation(
+                              _SettingsConfirmationAction.clearAllData,
+                            );
                           },
                         ),
                       ],
@@ -128,10 +134,9 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                             alpha: 0.10,
                           ),
                           onTap: () {
-                            setState(() {
-                              _confirmationAction =
-                                  _SettingsConfirmationAction.logout;
-                            });
+                            _openConfirmation(
+                              _SettingsConfirmationAction.logout,
+                            );
                           },
                         ),
                       ],
@@ -172,27 +177,51 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
         if (_confirmationAction != null)
           _SettingsConfirmationOverlay(
             action: _confirmationAction!,
-            onCancel: () {
-              setState(() {
-                _confirmationAction = null;
-              });
-            },
-            onConfirm: _confirmAction,
+            isLoading: _isConfirmingAction,
+            onCancel: _isConfirmingAction ? null : _closeConfirmation,
+            onConfirm: _isConfirmingAction ? null : _confirmAction,
           ),
       ],
     );
   }
 
+  void _openConfirmation(_SettingsConfirmationAction action) {
+    setState(() {
+      _confirmationAction = action;
+      _isConfirmingAction = false;
+    });
+  }
+
+  void _closeConfirmation() {
+    setState(() {
+      _confirmationAction = null;
+      _isConfirmingAction = false;
+    });
+  }
+
   Future<void> _confirmAction() async {
     final action = _confirmationAction;
 
-    if (action == null) {
+    if (action == null || _isConfirmingAction) {
       return;
     }
+
+    setState(() {
+      _isConfirmingAction = true;
+    });
 
     switch (action) {
       case _SettingsConfirmationAction.restoreDefaultCategories:
         ref.read(productsProvider.notifier).restoreDefaultCategories();
+
+        if (!mounted) {
+          return;
+        }
+
+        setState(() {
+          _confirmationAction = null;
+          _isConfirmingAction = false;
+        });
 
         _showFeedback(
           message: 'Categorias padrão restauradas com sucesso.',
@@ -204,6 +233,15 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
         ref.read(purchasesProvider.notifier).clearAllPurchases();
         ref.read(productsProvider.notifier).resetProductsAndCategories();
 
+        if (!mounted) {
+          return;
+        }
+
+        setState(() {
+          _confirmationAction = null;
+          _isConfirmingAction = false;
+        });
+
         _showFeedback(
           message: 'Todos os dados deste usuário foram apagados com sucesso.',
           isError: false,
@@ -212,20 +250,25 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
 
       case _SettingsConfirmationAction.logout:
         await ref.read(authProvider.notifier).logout();
+
+        if (!mounted) {
+          return;
+        }
+
+        setState(() {
+          _confirmationAction = null;
+          _isConfirmingAction = false;
+        });
         break;
     }
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _confirmationAction = null;
-    });
   }
 
   void _showFeedback({required String message, required bool isError}) {
     _feedbackTimer?.cancel();
+
+    if (!mounted) {
+      return;
+    }
 
     setState(() {
       _feedbackMessage = message;
@@ -274,7 +317,12 @@ class _SettingsHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 5),
-          Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
+          Text(
+            subtitle,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
         ],
       ),
     );
@@ -391,6 +439,8 @@ class _LocalStorageStatusCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Dados salvos localmente',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 15,
@@ -443,6 +493,8 @@ class _StorageChip extends StatelessWidget {
       ),
       child: Text(
         '$label: $value',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: const TextStyle(
           color: AppColors.textPrimary,
           fontSize: 11.5,
@@ -526,6 +578,8 @@ class _SettingsActionCard extends StatelessWidget {
                   children: [
                     Text(
                       title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: AppColors.textPrimary,
                         fontSize: 14,
@@ -535,6 +589,8 @@ class _SettingsActionCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 11.5,
@@ -587,6 +643,8 @@ class _SettingsInfoTile extends StatelessWidget {
               children: [
                 Text(
                   title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 14,
@@ -596,6 +654,8 @@ class _SettingsInfoTile extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   subtitle,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 11.5,
@@ -655,11 +715,13 @@ class _SettingsFeedback extends StatelessWidget {
 
 class _SettingsConfirmationOverlay extends StatelessWidget {
   final _SettingsConfirmationAction action;
-  final VoidCallback onCancel;
-  final VoidCallback onConfirm;
+  final bool isLoading;
+  final VoidCallback? onCancel;
+  final VoidCallback? onConfirm;
 
   const _SettingsConfirmationOverlay({
     required this.action,
+    required this.isLoading,
     required this.onCancel,
     required this.onConfirm,
   });
@@ -695,82 +757,106 @@ class _SettingsConfirmationOverlay extends StatelessWidget {
         ? AppColors.danger
         : AppColors.primary;
 
-    return Container(
-      color: Colors.black.withValues(alpha: 0.22),
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(22),
-          child: Material(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(24),
-            child: Container(
-              width: double.infinity,
-              constraints: const BoxConstraints(maxWidth: 360),
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 58,
-                    height: 58,
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(20),
+    return Positioned.fill(
+      child: Container(
+        color: Colors.black.withValues(alpha: 0.34),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(22),
+            child: Material(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(24),
+              child: Container(
+                width: double.infinity,
+                constraints: const BoxConstraints(maxWidth: 360),
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.16),
+                      blurRadius: 28,
+                      offset: const Offset(0, 14),
                     ),
-                    child: Icon(
-                      isLogout
-                          ? Icons.logout_rounded
-                          : isClearAllData
-                          ? Icons.delete_forever_outlined
-                          : Icons.restart_alt_rounded,
-                      color: color,
-                      size: 30,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    message,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 12.5,
-                      height: 1.45,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: onCancel,
-                          child: const Text('Cancelar'),
-                        ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 58,
+                      height: 58,
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(20),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: FilledButton(
-                          style: FilledButton.styleFrom(backgroundColor: color),
-                          onPressed: onConfirm,
-                          child: Text(confirmLabel),
-                        ),
+                      child: Icon(
+                        isLogout
+                            ? Icons.logout_rounded
+                            : isClearAllData
+                            ? Icons.delete_forever_outlined
+                            : Icons.restart_alt_rounded,
+                        color: color,
+                        size: 30,
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12.5,
+                        height: 1.45,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: onCancel,
+                            child: const Text('Cancelar'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: color,
+                            ),
+                            onPressed: onConfirm,
+                            child: isLoading
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : Text(
+                                    confirmLabel,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
