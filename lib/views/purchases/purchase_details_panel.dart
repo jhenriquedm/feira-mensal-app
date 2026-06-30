@@ -55,8 +55,9 @@ class PurchaseDetailsPanel extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<PurchaseDetailsPanel> createState() =>
-      _PurchaseDetailsPanelState();
+  ConsumerState<PurchaseDetailsPanel> createState() {
+    return _PurchaseDetailsPanelState();
+  }
 }
 
 class _PurchaseDetailsPanelState extends ConsumerState<PurchaseDetailsPanel> {
@@ -107,16 +108,21 @@ class _PurchaseDetailsPanelState extends ConsumerState<PurchaseDetailsPanel> {
         case _PurchaseItemSortOption.name:
           final firstName = '${first.productName} ${first.productBrand}'
               .toLowerCase();
+
           final secondName = '${second.productName} ${second.productBrand}'
               .toLowerCase();
 
           return firstName.compareTo(secondName);
+
         case _PurchaseItemSortOption.highestValue:
           return second.total.compareTo(first.total);
+
         case _PurchaseItemSortOption.lowestValue:
           return first.total.compareTo(second.total);
+
         case _PurchaseItemSortOption.highestQuantity:
           return second.quantity.compareTo(first.quantity);
+
         case _PurchaseItemSortOption.lowestQuantity:
           return first.quantity.compareTo(second.quantity);
       }
@@ -249,11 +255,30 @@ class _PurchaseDetailsPanelState extends ConsumerState<PurchaseDetailsPanel> {
           ..sort((first, second) {
             final firstName = '${first.name} ${_productBrandLabel(first)}'
                 .toLowerCase();
+
             final secondName = '${second.name} ${_productBrandLabel(second)}'
                 .toLowerCase();
 
             return firstName.compareTo(secondName);
           });
+
+    final productsForForm =
+        productsState.products.where((product) {
+          if (_itemBeingEdited != null &&
+              product.id == _itemBeingEdited!.productId) {
+            return true;
+          }
+
+          return product.isActive;
+        }).toList()..sort((first, second) {
+          final firstName = '${first.name} ${_productBrandLabel(first)}'
+              .toLowerCase();
+
+          final secondName = '${second.name} ${_productBrandLabel(second)}'
+              .toLowerCase();
+
+          return firstName.compareTo(secondName);
+        });
 
     final hasActiveSearch = _itemSearchController.text.trim().isNotEmpty;
 
@@ -294,7 +319,7 @@ class _PurchaseDetailsPanelState extends ConsumerState<PurchaseDetailsPanel> {
             _PurchaseItemForm(
               purchase: purchase,
               item: _itemBeingEdited,
-              products: activeProducts,
+              products: productsForForm,
               onCancel: _closeItemForm,
               onSaved: (message) {
                 _closeItemForm();
@@ -424,6 +449,10 @@ class _PurchaseDetailsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final statusColor = purchase.isCompleted
+        ? AppColors.success
+        : AppColors.warning;
+
     return Row(
       children: [
         Container(
@@ -463,6 +492,15 @@ class _PurchaseDetailsHeader extends StatelessWidget {
                 style: Theme.of(
                   context,
                 ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                purchase.status.label,
+                style: TextStyle(
+                  color: statusColor,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ],
           ),
@@ -537,6 +575,14 @@ class _PurchaseDetailsSummary extends StatelessWidget {
               ),
             ],
           ),
+          if (purchase.notes?.trim().isNotEmpty == true) ...[
+            const SizedBox(height: 12),
+            _SummaryInfo(
+              icon: Icons.notes_outlined,
+              label: 'Observação',
+              value: purchase.notes!.trim(),
+            ),
+          ],
           const SizedBox(height: 14),
           const Divider(height: 1),
           const SizedBox(height: 14),
@@ -561,24 +607,28 @@ class _PurchaseDetailsSummary extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  const Text(
-                    'Total da compra',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 11,
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    const Text(
+                      'Total da compra',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 11,
+                      ),
                     ),
-                  ),
-                  Text(
-                    _detailsCurrencyFormatter.format(purchase.total),
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w900,
+                    Text(
+                      _detailsCurrencyFormatter.format(purchase.total),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -1004,7 +1054,7 @@ class _SummaryInfo extends StatelessWidget {
               ),
               Text(
                 value,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: AppColors.textPrimary,
@@ -1280,7 +1330,9 @@ class _PurchaseItemForm extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<_PurchaseItemForm> createState() => _PurchaseItemFormState();
+  ConsumerState<_PurchaseItemForm> createState() {
+    return _PurchaseItemFormState();
+  }
 }
 
 class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
@@ -1288,6 +1340,7 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
 
   final TextEditingController _productSearchController =
       TextEditingController();
+
   final TextEditingController _quantityController = TextEditingController();
   final TextEditingController _unitPriceController = TextEditingController();
 
@@ -1307,6 +1360,9 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
 
       if (_selectedProduct != null) {
         _productSearchController.text = _productOptionLabel(_selectedProduct!);
+      } else {
+        _productSearchController.text =
+            '${widget.item!.productName} - ${widget.item!.productBrand}';
       }
     }
   }
@@ -1355,6 +1411,7 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
 
   String _formatCurrencyInput(double value) {
     final cents = (value * 100).round().toString();
+
     return _formatCurrencyDigits(cents);
   }
 
@@ -1439,6 +1496,7 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
     }
 
     final productsViewModel = ref.read(productsProvider.notifier);
+
     final categoryName = productsViewModel.getCategoryName(
       selectedProduct.categoryId,
     );
@@ -1504,6 +1562,8 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
       });
     }).toList();
 
+    final isEditing = widget.item != null;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -1521,7 +1581,7 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
               children: [
                 Expanded(
                   child: Text(
-                    widget.item == null ? 'Adicionar item' : 'Editar item',
+                    isEditing ? 'Editar item' : 'Adicionar item',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
@@ -1552,32 +1612,39 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
                   children: [
                     TextFormField(
                       controller: _productSearchController,
+                      readOnly: isEditing,
                       textCapitalization: TextCapitalization.words,
                       decoration: _detailsInputDecoration('Produto *').copyWith(
                         hintText: 'Digite para buscar',
                         suffixIcon: Icon(
-                          _showProductSuggestions
+                          isEditing
+                              ? Icons.lock_outline_rounded
+                              : _showProductSuggestions
                               ? Icons.keyboard_arrow_up_rounded
                               : Icons.search_rounded,
                         ),
                         errorText: field.errorText,
                       ),
-                      onTap: () {
-                        setState(() {
-                          _showProductSuggestions = true;
-                        });
-                      },
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedProduct = null;
-                          _showProductSuggestions = true;
-                          _formError = null;
-                        });
+                      onTap: isEditing
+                          ? null
+                          : () {
+                              setState(() {
+                                _showProductSuggestions = true;
+                              });
+                            },
+                      onChanged: isEditing
+                          ? null
+                          : (value) {
+                              setState(() {
+                                _selectedProduct = null;
+                                _showProductSuggestions = true;
+                                _formError = null;
+                              });
 
-                        field.didChange(null);
-                      },
+                              field.didChange(null);
+                            },
                     ),
-                    if (_showProductSuggestions) ...[
+                    if (_showProductSuggestions && !isEditing) ...[
                       const SizedBox(height: 8),
                       Container(
                         constraints: const BoxConstraints(maxHeight: 190),
@@ -1736,12 +1803,16 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
                     ),
                   ),
                   const Spacer(),
-                  Text(
-                    _detailsCurrencyFormatter.format(_currentTotal),
-                    style: const TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
+                  Flexible(
+                    child: Text(
+                      _detailsCurrencyFormatter.format(_currentTotal),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ),
                 ],
@@ -1924,6 +1995,8 @@ class _PurchaseItemCard extends StatelessWidget {
                 const SizedBox(height: 5),
                 Text(
                   _detailsCurrencyFormatter.format(item.total),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: AppColors.primary,
                     fontSize: 14,
