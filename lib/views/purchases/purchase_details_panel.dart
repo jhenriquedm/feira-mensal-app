@@ -264,6 +264,10 @@ class _PurchaseDetailsPanelState extends ConsumerState<PurchaseDetailsPanel> {
           _PurchaseDetailsHeader(purchase: purchase, onClose: widget.onClose),
           const SizedBox(height: 14),
           _PurchaseDetailsSummary(purchase: purchase),
+          if (purchase.items.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _AdvancedPurchaseSummary(purchase: purchase),
+          ],
           const SizedBox(height: 12),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 220),
@@ -582,6 +586,389 @@ class _PurchaseDetailsSummary extends StatelessWidget {
       ),
     );
   }
+}
+
+class _AdvancedPurchaseSummary extends StatelessWidget {
+  final PurchaseModel purchase;
+
+  const _AdvancedPurchaseSummary({required this.purchase});
+
+  @override
+  Widget build(BuildContext context) {
+    final categoryTotals = _buildCategoryTotals(purchase.items);
+    final mostExpensiveItem = _findMostExpensiveItem(purchase.items);
+
+    final totalQuantity = purchase.items.fold<double>(0, (sum, item) {
+      return sum + item.quantity;
+    });
+
+    final averageItemValue = purchase.items.isEmpty
+        ? 0.0
+        : purchase.total / purchase.items.length;
+
+    final topCategory = categoryTotals.isEmpty ? null : categoryTotals.first;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.16)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(
+                Icons.auto_graph_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Resumo inteligente',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _AdvancedMetricCard(
+                  title: 'Qtd. total',
+                  value: _formatQuantity(totalQuantity),
+                  subtitle: 'Unidades somadas',
+                  icon: Icons.numbers_rounded,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _AdvancedMetricCard(
+                  title: 'Média/item',
+                  value: _detailsCurrencyFormatter.format(averageItemValue),
+                  subtitle: 'Valor médio',
+                  icon: Icons.payments_outlined,
+                  color: AppColors.success,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _InsightTile(
+            icon: Icons.category_outlined,
+            title: 'Categoria com maior gasto',
+            value: topCategory?.name ?? 'Sem categoria',
+            subtitle: topCategory == null
+                ? 'Adicione itens para visualizar'
+                : _detailsCurrencyFormatter.format(topCategory.total),
+            color: AppColors.warning,
+          ),
+          const SizedBox(height: 10),
+          _InsightTile(
+            icon: Icons.local_offer_outlined,
+            title: 'Item mais caro',
+            value: mostExpensiveItem?.productName ?? 'Nenhum item',
+            subtitle: mostExpensiveItem == null
+                ? 'Adicione itens para visualizar'
+                : '${mostExpensiveItem.productBrand} • ${_detailsCurrencyFormatter.format(mostExpensiveItem.total)}',
+            color: AppColors.primary,
+          ),
+          if (categoryTotals.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            const Text(
+              'Total por categoria',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 13,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 10),
+            ...categoryTotals.take(4).map((category) {
+              final progress = purchase.total <= 0
+                  ? 0.0
+                  : (category.total / purchase.total).clamp(0.0, 1.0);
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 9),
+                child: _CategoryTotalRow(
+                  category: category,
+                  progress: progress,
+                ),
+              );
+            }),
+            if (categoryTotals.length > 4)
+              Text(
+                '+${categoryTotals.length - 4} categorias com valores menores',
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  List<_CategoryPurchaseTotal> _buildCategoryTotals(
+    List<PurchaseItemModel> items,
+  ) {
+    final totals = <String, double>{};
+
+    for (final item in items) {
+      totals[item.categoryName] = (totals[item.categoryName] ?? 0) + item.total;
+    }
+
+    final categories = totals.entries.map((entry) {
+      return _CategoryPurchaseTotal(name: entry.key, total: entry.value);
+    }).toList();
+
+    categories.sort((first, second) {
+      return second.total.compareTo(first.total);
+    });
+
+    return categories;
+  }
+
+  PurchaseItemModel? _findMostExpensiveItem(List<PurchaseItemModel> items) {
+    if (items.isEmpty) {
+      return null;
+    }
+
+    final sortedItems = [...items];
+
+    sortedItems.sort((first, second) {
+      return second.total.compareTo(first.total);
+    });
+
+    return sortedItems.first;
+  }
+}
+
+class _AdvancedMetricCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+
+  const _AdvancedMetricCard({
+    required this.title,
+    required this.value,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 94),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 19),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: color,
+              fontSize: 14,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 10.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InsightTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+  final String subtitle;
+  final Color color;
+
+  const _InsightTile({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.subtitle,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.11),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CategoryTotalRow extends StatelessWidget {
+  final _CategoryPurchaseTotal category;
+  final double progress;
+
+  const _CategoryTotalRow({required this.category, required this.progress});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(11, 10, 11, 10),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  category.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                _detailsCurrencyFormatter.format(category.total),
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 6,
+              backgroundColor: AppColors.primary.withValues(alpha: 0.10),
+              color: AppColors.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CategoryPurchaseTotal {
+  final String name;
+  final double total;
+
+  const _CategoryPurchaseTotal({required this.name, required this.total});
 }
 
 class _SummaryInfo extends StatelessWidget {
