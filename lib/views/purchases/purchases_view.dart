@@ -17,6 +17,40 @@ final NumberFormat _currencyFormatter = NumberFormat.currency(
 
 final DateFormat _dateFormatter = DateFormat('dd/MM/yyyy');
 
+enum _PurchaseStatusFilter { all, inProgress, completed }
+
+extension _PurchaseStatusFilterExtension on _PurchaseStatusFilter {
+  String get label {
+    switch (this) {
+      case _PurchaseStatusFilter.all:
+        return 'Todas';
+      case _PurchaseStatusFilter.inProgress:
+        return 'Em andamento';
+      case _PurchaseStatusFilter.completed:
+        return 'Finalizadas';
+    }
+  }
+}
+
+enum _PurchaseSortOption { newest, oldest, highestValue, lowestValue, name }
+
+extension _PurchaseSortOptionExtension on _PurchaseSortOption {
+  String get label {
+    switch (this) {
+      case _PurchaseSortOption.newest:
+        return 'Mais recentes';
+      case _PurchaseSortOption.oldest:
+        return 'Mais antigas';
+      case _PurchaseSortOption.highestValue:
+        return 'Maior valor';
+      case _PurchaseSortOption.lowestValue:
+        return 'Menor valor';
+      case _PurchaseSortOption.name:
+        return 'Nome A-Z';
+    }
+  }
+}
+
 class _PurchaseFormResult {
   final String message;
   final String? purchaseId;
@@ -45,6 +79,8 @@ class PurchasesView extends ConsumerStatefulWidget {
 }
 
 class _PurchasesViewState extends ConsumerState<PurchasesView> {
+  final TextEditingController _searchController = TextEditingController();
+
   String? _feedbackMessage;
   bool _feedbackIsError = false;
   Timer? _feedbackTimer;
@@ -54,20 +90,51 @@ class _PurchasesViewState extends ConsumerState<PurchasesView> {
   PurchaseModel? _purchasePendingDelete;
   String? _selectedPurchaseId;
 
+  _PurchaseStatusFilter _statusFilter = _PurchaseStatusFilter.all;
+  _PurchaseSortOption _sortOption = _PurchaseSortOption.newest;
+
   @override
   void dispose() {
     _feedbackTimer?.cancel();
+    _searchController.dispose();
     super.dispose();
   }
 
-  List<PurchaseModel> _sortPurchases(List<PurchaseModel> purchases) {
-    final sortedPurchases = [...purchases];
+  List<PurchaseModel> _processPurchases(List<PurchaseModel> purchases) {
+    final query = _normalize(_searchController.text);
 
-    sortedPurchases.sort((first, second) {
-      return second.date.compareTo(first.date);
+    final filteredPurchases = purchases.where((purchase) {
+      final matchesStatus = switch (_statusFilter) {
+        _PurchaseStatusFilter.all => true,
+        _PurchaseStatusFilter.inProgress => !purchase.isCompleted,
+        _PurchaseStatusFilter.completed => purchase.isCompleted,
+      };
+
+      final searchableText = _normalize(
+        '${purchase.name} ${purchase.market} ${purchase.type.label}',
+      );
+
+      final matchesSearch = query.isEmpty || searchableText.contains(query);
+
+      return matchesStatus && matchesSearch;
+    }).toList();
+
+    filteredPurchases.sort((first, second) {
+      switch (_sortOption) {
+        case _PurchaseSortOption.newest:
+          return second.date.compareTo(first.date);
+        case _PurchaseSortOption.oldest:
+          return first.date.compareTo(second.date);
+        case _PurchaseSortOption.highestValue:
+          return second.total.compareTo(first.total);
+        case _PurchaseSortOption.lowestValue:
+          return first.total.compareTo(second.total);
+        case _PurchaseSortOption.name:
+          return first.name.toLowerCase().compareTo(second.name.toLowerCase());
+      }
     });
 
-    return sortedPurchases;
+    return filteredPurchases;
   }
 
   void _showLocalMessage(String message, {bool isError = false}) {
@@ -217,16 +284,26 @@ class _PurchasesViewState extends ConsumerState<PurchasesView> {
     });
   }
 
+  void _clearSearch() {
+    setState(() {
+      _searchController.clear();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(purchasesProvider);
-    final purchases = _sortPurchases(state.purchases);
+    final purchases = _processPurchases(state.purchases);
     final viewModel = ref.read(purchasesProvider.notifier);
 
     final hasOverlay =
         _isPurchaseFormVisible ||
         _purchasePendingDelete != null ||
         _selectedPurchaseId != null;
+
+    final hasActiveSearchOrFilter =
+        _searchController.text.trim().isNotEmpty ||
+        _statusFilter != _PurchaseStatusFilter.all;
 
     return Scaffold(
       body: SafeArea(
@@ -246,9 +323,40 @@ class _PurchasesViewState extends ConsumerState<PurchasesView> {
                           isError: _feedbackIsError,
                         ),
                 ),
+                if (state.purchases.isNotEmpty)
+                  _PurchasesControls(
+                    searchController: _searchController,
+                    statusFilter: _statusFilter,
+                    sortOption: _sortOption,
+                    onSearchChanged: (_) {
+                      setState(() {});
+                    },
+                    onClearSearch: _clearSearch,
+                    onStatusFilterChanged: (value) {
+                      setState(() {
+                        _statusFilter = value;
+                      });
+                    },
+                    onSortChanged: (value) {
+                      setState(() {
+                        _sortOption = value;
+                      });
+                    },
+                  ),
                 Expanded(
-                  child: purchases.isEmpty
+                  child: state.purchases.isEmpty
                       ? const _EmptyPurchasesState()
+                      : purchases.isEmpty
+                      ? _NoPurchasesFoundState(
+                          hasActiveSearchOrFilter: hasActiveSearchOrFilter,
+                          onClearFilters: () {
+                            setState(() {
+                              _searchController.clear();
+                              _statusFilter = _PurchaseStatusFilter.all;
+                              _sortOption = _PurchaseSortOption.newest;
+                            });
+                          },
+                        )
                       : ListView.separated(
                           padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
                           itemCount: purchases.length,
@@ -304,12 +412,17 @@ class _PurchasesViewState extends ConsumerState<PurchasesView> {
       ),
       floatingActionButton: hasOverlay
           ? null
-          : FloatingActionButton(
+          : FloatingActionButton.extended(
               tooltip: 'Adicionar compra',
               onPressed: _openCreatePurchaseForm,
-              child: const Icon(Icons.add),
+              icon: const Icon(Icons.add),
+              label: const Text('Nova compra'),
             ),
     );
+  }
+
+  String _normalize(String value) {
+    return value.trim().toLowerCase();
   }
 }
 
@@ -373,6 +486,194 @@ class _PurchasesHeader extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PurchasesControls extends StatelessWidget {
+  final TextEditingController searchController;
+  final _PurchaseStatusFilter statusFilter;
+  final _PurchaseSortOption sortOption;
+  final ValueChanged<String> onSearchChanged;
+  final VoidCallback onClearSearch;
+  final ValueChanged<_PurchaseStatusFilter> onStatusFilterChanged;
+  final ValueChanged<_PurchaseSortOption> onSortChanged;
+
+  const _PurchasesControls({
+    required this.searchController,
+    required this.statusFilter,
+    required this.sortOption,
+    required this.onSearchChanged,
+    required this.onClearSearch,
+    required this.onStatusFilterChanged,
+    required this.onSortChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.background,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      child: Column(
+        children: [
+          TextField(
+            controller: searchController,
+            textCapitalization: TextCapitalization.words,
+            onChanged: onSearchChanged,
+            decoration: InputDecoration(
+              hintText: 'Buscar por compra, mercado ou tipo',
+              prefixIcon: const Icon(Icons.search_rounded),
+              suffixIcon: searchController.text.trim().isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: 'Limpar busca',
+                      onPressed: onClearSearch,
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+              filled: true,
+              isDense: true,
+              fillColor: AppColors.surface,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 13,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18),
+                borderSide: const BorderSide(
+                  color: AppColors.primary,
+                  width: 1.5,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _PurchaseFilterDropdown(
+                  label: 'Status',
+                  value: statusFilter.label,
+                  icon: Icons.filter_alt_outlined,
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<_PurchaseStatusFilter>(
+                      value: statusFilter,
+                      isExpanded: true,
+                      borderRadius: BorderRadius.circular(16),
+                      dropdownColor: AppColors.surface,
+                      items: _PurchaseStatusFilter.values.map((filter) {
+                        return DropdownMenuItem<_PurchaseStatusFilter>(
+                          value: filter,
+                          child: Text(
+                            filter.label,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        if (value == null) {
+                          return;
+                        }
+
+                        onStatusFilterChanged(value);
+                      },
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _PurchaseFilterDropdown(
+                  label: 'Ordenar',
+                  value: sortOption.label,
+                  icon: Icons.sort_rounded,
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<_PurchaseSortOption>(
+                      value: sortOption,
+                      isExpanded: true,
+                      borderRadius: BorderRadius.circular(16),
+                      dropdownColor: AppColors.surface,
+                      items: _PurchaseSortOption.values.map((option) {
+                        return DropdownMenuItem<_PurchaseSortOption>(
+                          value: option,
+                          child: Text(
+                            option.label,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        if (value == null) {
+                          return;
+                        }
+
+                        onSortChanged(value);
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PurchaseFilterDropdown extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Widget child;
+
+  const _PurchaseFilterDropdown({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 58,
+      padding: const EdgeInsets.fromLTRB(12, 8, 10, 6),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: AppColors.textSecondary),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Expanded(child: child),
+              ],
+            ),
           ),
         ],
       ),
@@ -781,6 +1082,65 @@ class _EmptyPurchasesState extends StatelessWidget {
                 context,
               ).textTheme.bodyMedium?.copyWith(height: 1.45),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NoPurchasesFoundState extends StatelessWidget {
+  final bool hasActiveSearchOrFilter;
+  final VoidCallback onClearFilters;
+
+  const _NoPurchasesFoundState({
+    required this.hasActiveSearchOrFilter,
+    required this.onClearFilters,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(28, 28, 28, 110),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 78,
+              height: 78,
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(26),
+              ),
+              child: const Icon(
+                Icons.search_off_rounded,
+                size: 38,
+                color: AppColors.warning,
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              'Nenhuma compra encontrada',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Altere a busca, o filtro ou a ordenação para visualizar outros registros.',
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(height: 1.45),
+            ),
+            if (hasActiveSearchOrFilter) ...[
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: onClearFilters,
+                icon: const Icon(Icons.restart_alt_rounded),
+                label: const Text('Limpar filtros'),
+              ),
+            ],
           ],
         ),
       ),
