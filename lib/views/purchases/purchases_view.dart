@@ -207,7 +207,7 @@ class _PurchasesViewState extends ConsumerState<PurchasesView> {
       _purchaseBeingEdited = null;
     });
 
-    await Future<void>.delayed(const Duration(milliseconds: 80));
+    await Future<void>.delayed(const Duration(milliseconds: 120));
 
     if (!mounted) {
       return;
@@ -267,7 +267,7 @@ class _PurchasesViewState extends ConsumerState<PurchasesView> {
       _purchasePendingDelete = null;
     });
 
-    await Future<void>.delayed(const Duration(milliseconds: 80));
+    await Future<void>.delayed(const Duration(milliseconds: 120));
 
     if (!mounted) {
       return;
@@ -306,6 +306,7 @@ class _PurchasesViewState extends ConsumerState<PurchasesView> {
         _statusFilter != _PurchaseStatusFilter.all;
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: SafeArea(
         bottom: false,
         child: Stack(
@@ -441,6 +442,10 @@ class _PurchasesHeader extends StatelessWidget {
         .where((purchase) => purchase.status == PurchaseStatus.completed)
         .length;
 
+    final totalValue = state.purchases.fold<double>(0, (sum, purchase) {
+      return sum + purchase.total;
+    });
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
@@ -487,6 +492,72 @@ class _PurchasesHeader extends StatelessWidget {
               ),
             ],
           ),
+          if (state.purchases.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.16),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(
+                      Icons.payments_outlined,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 11),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Total registrado',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _currencyFormatter.format(totalValue),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    '${state.purchases.length} compras',
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -562,7 +633,6 @@ class _PurchasesControls extends StatelessWidget {
               Expanded(
                 child: _PurchaseFilterDropdown(
                   label: 'Status',
-                  value: statusFilter.label,
                   icon: Icons.filter_alt_outlined,
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<_PurchaseStatusFilter>(
@@ -594,7 +664,6 @@ class _PurchasesControls extends StatelessWidget {
               Expanded(
                 child: _PurchaseFilterDropdown(
                   label: 'Ordenar',
-                  value: sortOption.label,
                   icon: Icons.sort_rounded,
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<_PurchaseSortOption>(
@@ -632,13 +701,11 @@ class _PurchasesControls extends StatelessWidget {
 
 class _PurchaseFilterDropdown extends StatelessWidget {
   final String label;
-  final String value;
   final IconData icon;
   final Widget child;
 
   const _PurchaseFilterDropdown({
     required this.label,
-    required this.value,
     required this.icon,
     required this.child,
   });
