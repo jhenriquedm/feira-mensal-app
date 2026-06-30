@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/app_user_model.dart';
 import '../models/category_model.dart';
 import '../models/product_model.dart';
 import '../models/purchase_model.dart';
@@ -18,12 +19,29 @@ class LocalStorageService {
   static const String _productsKey = 'feira_mensal_products_v1';
   static const String _purchasesKey = 'feira_mensal_purchases_v1';
 
-  static Future<ProductsStorageData?> loadProductsData() async {
+  static const String _usersKey = 'feira_mensal_users_v1';
+  static const String _currentUserIdKey = 'feira_mensal_current_user_id_v1';
+
+  static String _userScopedKey({
+    required String baseKey,
+    required String userId,
+  }) {
+    return '${baseKey}_user_$userId';
+  }
+
+  static Future<ProductsStorageData?> loadProductsDataForUser({
+    required String userId,
+  }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      final categoriesJson = prefs.getString(_categoriesKey);
-      final productsJson = prefs.getString(_productsKey);
+      final categoriesJson = prefs.getString(
+        _userScopedKey(baseKey: _categoriesKey, userId: userId),
+      );
+
+      final productsJson = prefs.getString(
+        _userScopedKey(baseKey: _productsKey, userId: userId),
+      );
 
       if (categoriesJson == null && productsJson == null) {
         return null;
@@ -51,7 +69,8 @@ class LocalStorageService {
     }
   }
 
-  static Future<void> saveProductsData({
+  static Future<void> saveProductsDataForUser({
+    required String userId,
     required List<CategoryModel> categories,
     required List<ProductModel> products,
   }) async {
@@ -66,18 +85,29 @@ class LocalStorageService {
         products.map((product) => product.toMap()).toList(),
       );
 
-      await prefs.setString(_categoriesKey, categoriesJson);
-      await prefs.setString(_productsKey, productsJson);
+      await prefs.setString(
+        _userScopedKey(baseKey: _categoriesKey, userId: userId),
+        categoriesJson,
+      );
+
+      await prefs.setString(
+        _userScopedKey(baseKey: _productsKey, userId: userId),
+        productsJson,
+      );
     } catch (_) {
       // Evita quebrar testes ou execução caso o storage local falhe.
     }
   }
 
-  static Future<List<PurchaseModel>?> loadPurchases() async {
+  static Future<List<PurchaseModel>?> loadPurchasesForUser({
+    required String userId,
+  }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      final purchasesJson = prefs.getString(_purchasesKey);
+      final purchasesJson = prefs.getString(
+        _userScopedKey(baseKey: _purchasesKey, userId: userId),
+      );
 
       if (purchasesJson == null) {
         return null;
@@ -91,7 +121,10 @@ class LocalStorageService {
     }
   }
 
-  static Future<void> savePurchases(List<PurchaseModel> purchases) async {
+  static Future<void> savePurchasesForUser({
+    required String userId,
+    required List<PurchaseModel> purchases,
+  }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
 
@@ -99,7 +132,69 @@ class LocalStorageService {
         purchases.map((purchase) => purchase.toMap()).toList(),
       );
 
-      await prefs.setString(_purchasesKey, purchasesJson);
+      await prefs.setString(
+        _userScopedKey(baseKey: _purchasesKey, userId: userId),
+        purchasesJson,
+      );
+    } catch (_) {
+      // Evita quebrar testes ou execução caso o storage local falhe.
+    }
+  }
+
+  static Future<List<AppUserModel>> loadUsers() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final usersJson = prefs.getString(_usersKey);
+
+      if (usersJson == null) {
+        return [];
+      }
+
+      return (jsonDecode(usersJson) as List).map((item) {
+        return AppUserModel.fromMap(Map<String, dynamic>.from(item as Map));
+      }).toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  static Future<void> saveUsers(List<AppUserModel> users) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      final usersJson = jsonEncode(users.map((user) => user.toMap()).toList());
+
+      await prefs.setString(_usersKey, usersJson);
+    } catch (_) {
+      // Evita quebrar testes ou execução caso o storage local falhe.
+    }
+  }
+
+  static Future<String?> loadCurrentUserId() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      return prefs.getString(_currentUserIdKey);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<void> saveCurrentUserId(String userId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      await prefs.setString(_currentUserIdKey, userId);
+    } catch (_) {
+      // Evita quebrar testes ou execução caso o storage local falhe.
+    }
+  }
+
+  static Future<void> clearCurrentUserSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      await prefs.remove(_currentUserIdKey);
     } catch (_) {
       // Evita quebrar testes ou execução caso o storage local falhe.
     }

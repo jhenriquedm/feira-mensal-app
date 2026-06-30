@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/products_viewmodel.dart';
 import '../../viewmodels/purchases_viewmodel.dart';
 
@@ -28,8 +29,11 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
     final productsState = ref.watch(productsProvider);
     final purchasesState = ref.watch(purchasesProvider);
+
+    final currentUser = authState.currentUser;
 
     final categoriesCount = productsState.categories.length;
     final productsCount = productsState.products.length;
@@ -43,7 +47,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
       children: [
         Column(
           children: [
-            const _SettingsHeader(),
+            _SettingsHeader(userName: currentUser?.name),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
@@ -54,6 +58,13 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                       isError: _feedbackIsError,
                     ),
                     const SizedBox(height: 14),
+                  ],
+                  if (currentUser != null) ...[
+                    _CurrentUserCard(
+                      name: currentUser.name,
+                      email: currentUser.email,
+                    ),
+                    const SizedBox(height: 16),
                   ],
                   _LocalStorageStatusCard(
                     categoriesCount: categoriesCount,
@@ -87,7 +98,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                           icon: Icons.delete_forever_outlined,
                           title: 'Limpar todos os dados',
                           subtitle:
-                              'Apaga produtos, compras, itens e relatórios salvos neste dispositivo.',
+                              'Apaga produtos, compras, itens e relatórios deste usuário.',
                           foregroundColor: AppColors.danger,
                           backgroundColor: AppColors.danger.withValues(
                             alpha: 0.10,
@@ -96,6 +107,30 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                             setState(() {
                               _confirmationAction =
                                   _SettingsConfirmationAction.clearAllData;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _SettingsSection(
+                    title: 'Conta',
+                    child: Column(
+                      children: [
+                        _SettingsActionCard(
+                          icon: Icons.logout_rounded,
+                          title: 'Sair da conta',
+                          subtitle:
+                              'Encerra a sessão atual e volta para a tela de login. Seus dados continuam salvos.',
+                          foregroundColor: AppColors.danger,
+                          backgroundColor: AppColors.danger.withValues(
+                            alpha: 0.10,
+                          ),
+                          onTap: () {
+                            setState(() {
+                              _confirmationAction =
+                                  _SettingsConfirmationAction.logout;
                             });
                           },
                         ),
@@ -118,7 +153,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                           icon: Icons.storage_rounded,
                           title: 'Armazenamento',
                           subtitle:
-                              'Os dados estão sendo salvos localmente no dispositivo.',
+                              'Os dados estão sendo salvos localmente por usuário neste dispositivo.',
                         ),
                         SizedBox(height: 10),
                         _SettingsInfoTile(
@@ -148,7 +183,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
     );
   }
 
-  void _confirmAction() {
+  Future<void> _confirmAction() async {
     final action = _confirmationAction;
 
     if (action == null) {
@@ -164,15 +199,24 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
           isError: false,
         );
         break;
+
       case _SettingsConfirmationAction.clearAllData:
         ref.read(purchasesProvider.notifier).clearAllPurchases();
         ref.read(productsProvider.notifier).resetProductsAndCategories();
 
         _showFeedback(
-          message: 'Todos os dados locais foram apagados com sucesso.',
+          message: 'Todos os dados deste usuário foram apagados com sucesso.',
           isError: false,
         );
         break;
+
+      case _SettingsConfirmationAction.logout:
+        await ref.read(authProvider.notifier).logout();
+        break;
+    }
+
+    if (!mounted) {
+      return;
     }
 
     setState(() {
@@ -202,10 +246,16 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
 }
 
 class _SettingsHeader extends StatelessWidget {
-  const _SettingsHeader();
+  final String? userName;
+
+  const _SettingsHeader({required this.userName});
 
   @override
   Widget build(BuildContext context) {
+    final subtitle = userName == null
+        ? 'Gerencie dados locais, preferências e informações do app.'
+        : 'Olá, $userName. Gerencie sua conta e seus dados locais.';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
@@ -224,9 +274,80 @@ class _SettingsHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 5),
-          Text(
-            'Gerencie dados locais, preferências e informações do app.',
-            style: Theme.of(context).textTheme.bodyMedium,
+          Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
+        ],
+      ),
+    );
+  }
+}
+
+class _CurrentUserCard extends StatelessWidget {
+  final String name;
+  final String email;
+
+  const _CurrentUserCard({required this.name, required this.email});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(
+              Icons.person_outline_rounded,
+              color: AppColors.primary,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Usuário conectado',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  email,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -281,7 +402,7 @@ class _LocalStorageStatusCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           const Text(
-            'As informações permanecem salvas mesmo ao atualizar ou fechar o app.',
+            'As informações permanecem salvas para este usuário mesmo ao atualizar ou fechar o app.',
             style: TextStyle(
               color: AppColors.textSecondary,
               fontSize: 12,
@@ -545,19 +666,34 @@ class _SettingsConfirmationOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDanger = action == _SettingsConfirmationAction.clearAllData;
+    final isClearAllData = action == _SettingsConfirmationAction.clearAllData;
+    final isLogout = action == _SettingsConfirmationAction.logout;
 
-    final title = isDanger
-        ? 'Limpar todos os dados?'
-        : 'Restaurar categorias padrão?';
+    final title = switch (action) {
+      _SettingsConfirmationAction.clearAllData => 'Limpar todos os dados?',
+      _SettingsConfirmationAction.restoreDefaultCategories =>
+        'Restaurar categorias padrão?',
+      _SettingsConfirmationAction.logout => 'Sair da conta?',
+    };
 
-    final message = isDanger
-        ? 'Essa ação apagará produtos, compras, itens e relatórios salvos neste dispositivo. Essa ação não pode ser desfeita.'
-        : 'Essa ação recriará e reativará as categorias padrão do app, sem apagar produtos ou compras já cadastrados.';
+    final message = switch (action) {
+      _SettingsConfirmationAction.clearAllData =>
+        'Essa ação apagará produtos, compras, itens e relatórios deste usuário. Essa ação não pode ser desfeita.',
+      _SettingsConfirmationAction.restoreDefaultCategories =>
+        'Essa ação recriará e reativará as categorias padrão do app, sem apagar produtos ou compras já cadastrados.',
+      _SettingsConfirmationAction.logout =>
+        'Sua sessão será encerrada e você voltará para a tela de login. Seus dados continuarão salvos.',
+    };
 
-    final confirmLabel = isDanger ? 'Limpar dados' : 'Restaurar';
+    final confirmLabel = switch (action) {
+      _SettingsConfirmationAction.clearAllData => 'Limpar dados',
+      _SettingsConfirmationAction.restoreDefaultCategories => 'Restaurar',
+      _SettingsConfirmationAction.logout => 'Sair',
+    };
 
-    final color = isDanger ? AppColors.danger : AppColors.primary;
+    final color = isClearAllData || isLogout
+        ? AppColors.danger
+        : AppColors.primary;
 
     return Container(
       color: Colors.black.withValues(alpha: 0.22),
@@ -586,7 +722,9 @@ class _SettingsConfirmationOverlay extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Icon(
-                      isDanger
+                      isLogout
+                          ? Icons.logout_rounded
+                          : isClearAllData
                           ? Icons.delete_forever_outlined
                           : Icons.restart_alt_rounded,
                       color: color,
@@ -642,4 +780,8 @@ class _SettingsConfirmationOverlay extends StatelessWidget {
   }
 }
 
-enum _SettingsConfirmationAction { clearAllData, restoreDefaultCategories }
+enum _SettingsConfirmationAction {
+  clearAllData,
+  restoreDefaultCategories,
+  logout,
+}

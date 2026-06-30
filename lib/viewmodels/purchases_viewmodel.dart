@@ -4,10 +4,17 @@ import 'package:uuid/uuid.dart';
 import '../models/purchase_item_model.dart';
 import '../models/purchase_model.dart';
 import '../services/local_storage_service.dart';
+import 'auth_viewmodel.dart';
 
 final purchasesProvider =
     StateNotifierProvider<PurchasesViewModel, PurchasesState>((ref) {
-      return PurchasesViewModel();
+      final currentUserId = ref.watch(
+        authProvider.select((state) {
+          return state.currentUser?.id;
+        }),
+      );
+
+      return PurchasesViewModel(userId: currentUserId ?? 'no_user');
     });
 
 final productIdsLinkedToPurchasesProvider = Provider<Set<String>>((ref) {
@@ -30,7 +37,10 @@ class PurchasesState {
 }
 
 class PurchasesViewModel extends StateNotifier<PurchasesState> {
-  PurchasesViewModel() : super(const PurchasesState(purchases: [])) {
+  final String userId;
+
+  PurchasesViewModel({required this.userId})
+    : super(const PurchasesState(purchases: [])) {
     _loadSavedPurchases();
   }
 
@@ -298,7 +308,9 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
   }
 
   Future<void> _loadSavedPurchases() async {
-    final savedPurchases = await LocalStorageService.loadPurchases();
+    final savedPurchases = await LocalStorageService.loadPurchasesForUser(
+      userId: userId,
+    );
 
     if (!mounted || savedPurchases == null) {
       return;
@@ -345,7 +357,10 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
   }
 
   void _saveLocalData() {
-    LocalStorageService.savePurchases(state.purchases);
+    LocalStorageService.savePurchasesForUser(
+      userId: userId,
+      purchases: state.purchases,
+    );
   }
 
   bool _isSameDay(DateTime first, DateTime second) {

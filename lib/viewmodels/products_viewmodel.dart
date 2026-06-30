@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../models/category_model.dart';
 import '../models/product_model.dart';
 import '../services/local_storage_service.dart';
+import 'auth_viewmodel.dart';
 
 const List<CategoryModel> defaultCategories = [
   CategoryModel(id: 'bebidas', name: 'Bebidas', iconName: 'bebidas'),
@@ -20,7 +21,13 @@ const List<CategoryModel> defaultCategories = [
 
 final productsProvider =
     StateNotifierProvider<ProductsViewModel, ProductsState>((ref) {
-      return ProductsViewModel();
+      final currentUserId = ref.watch(
+        authProvider.select((state) {
+          return state.currentUser?.id;
+        }),
+      );
+
+      return ProductsViewModel(userId: currentUserId ?? 'no_user');
     });
 
 class ProductsState {
@@ -41,7 +48,9 @@ class ProductsState {
 }
 
 class ProductsViewModel extends StateNotifier<ProductsState> {
-  ProductsViewModel()
+  final String userId;
+
+  ProductsViewModel({required this.userId})
     : super(const ProductsState(categories: defaultCategories, products: [])) {
     _loadSavedProductsData();
   }
@@ -262,7 +271,9 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
   }
 
   Future<void> _loadSavedProductsData() async {
-    final savedData = await LocalStorageService.loadProductsData();
+    final savedData = await LocalStorageService.loadProductsDataForUser(
+      userId: userId,
+    );
 
     if (!mounted || savedData == null) {
       return;
@@ -292,7 +303,8 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
   }
 
   void _saveLocalData() {
-    LocalStorageService.saveProductsData(
+    LocalStorageService.saveProductsDataForUser(
+      userId: userId,
       categories: state.categories,
       products: state.products,
     );

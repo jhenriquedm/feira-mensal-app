@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../models/purchase_model.dart';
+import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/products_viewmodel.dart';
 import '../../viewmodels/purchases_viewmodel.dart';
 import '../../widgets/app_feature_card.dart';
@@ -27,8 +28,11 @@ class HomeView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
     final productsState = ref.watch(productsProvider);
     final purchasesState = ref.watch(purchasesProvider);
+
+    final firstName = _getFirstName(authState.currentUser?.name);
 
     final now = DateTime.now();
 
@@ -65,6 +69,7 @@ class HomeView extends ConsumerWidget {
             children: [
               _buildHeader(
                 context,
+                firstName: firstName,
                 currentMonthTotal: currentMonthTotal,
                 inProgressPurchases: inProgressPurchases,
               ),
@@ -119,9 +124,14 @@ class HomeView extends ConsumerWidget {
 
   Widget _buildHeader(
     BuildContext context, {
+    required String? firstName,
     required double currentMonthTotal,
     required int inProgressPurchases,
   }) {
+    final welcomeMessage = firstName == null
+        ? 'Seja bem-vindo!'
+        : 'Seja bem-vindo, $firstName!';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -143,6 +153,38 @@ class HomeView extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.waving_hand_rounded,
+                  color: Colors.white,
+                  size: 17,
+                ),
+                const SizedBox(width: 7),
+                Flexible(
+                  child: Text(
+                    welcomeMessage,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
           const Text(
             'Controle sua feira com inteligência',
             style: TextStyle(
@@ -362,6 +404,22 @@ class HomeView extends ConsumerWidget {
     final topEntry = entries.first;
 
     return _CategoryHighlight(name: topEntry.key, total: topEntry.value);
+  }
+
+  String? _getFirstName(String? fullName) {
+    final name = fullName?.trim();
+
+    if (name == null || name.isEmpty) {
+      return null;
+    }
+
+    final firstName = name.split(RegExp(r'\s+')).first.trim();
+
+    if (firstName.isEmpty) {
+      return null;
+    }
+
+    return firstName;
   }
 }
 
