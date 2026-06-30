@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 
 import '../models/category_model.dart';
 import '../models/product_model.dart';
+import '../services/local_storage_service.dart';
 
 final productsProvider =
     StateNotifierProvider<ProductsViewModel, ProductsState>((ref) {
@@ -48,7 +49,9 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
           ],
           products: [],
         ),
-      );
+      ) {
+    _loadSavedProductsData();
+  }
 
   final Uuid _uuid = const Uuid();
 
@@ -113,7 +116,7 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
       isActive: isActive,
     );
 
-    state = state.copyWith(categories: [...state.categories, category]);
+    _emitState(state.copyWith(categories: [...state.categories, category]));
   }
 
   void updateCategory({
@@ -126,15 +129,10 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
         return category;
       }
 
-      return CategoryModel(
-        id: category.id,
-        name: name.trim(),
-        iconName: category.iconName,
-        isActive: isActive,
-      );
+      return category.copyWith(name: name.trim(), isActive: isActive);
     }).toList();
 
-    state = state.copyWith(categories: updatedCategories);
+    _emitState(state.copyWith(categories: updatedCategories));
   }
 
   bool canDeleteCategory(String categoryId) {
@@ -144,11 +142,11 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
   }
 
   void deleteCategory(String categoryId) {
-    state = state.copyWith(
-      categories: state.categories
-          .where((category) => category.id != categoryId)
-          .toList(),
-    );
+    final updatedCategories = state.categories
+        .where((category) => category.id != categoryId)
+        .toList();
+
+    _emitState(state.copyWith(categories: updatedCategories));
   }
 
   void addProduct({
@@ -167,7 +165,7 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
       isActive: isActive,
     );
 
-    state = state.copyWith(products: [...state.products, product]);
+    _emitState(state.copyWith(products: [...state.products, product]));
   }
 
   void updateProduct({
@@ -183,18 +181,16 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
         return product;
       }
 
-      return ProductModel(
-        id: id,
+      return product.copyWith(
         name: name.trim(),
         categoryId: categoryId,
         unit: unit,
         brand: brand.trim(),
-        lastPrice: product.lastPrice,
         isActive: isActive,
       );
     }).toList();
 
-    state = state.copyWith(products: updatedProducts);
+    _emitState(state.copyWith(products: updatedProducts));
   }
 
   bool canDeleteProduct(
@@ -227,9 +223,11 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
   }
 
   void deleteProduct(String id) {
-    state = state.copyWith(
-      products: state.products.where((product) => product.id != id).toList(),
-    );
+    final updatedProducts = state.products
+        .where((product) => product.id != id)
+        .toList();
+
+    _emitState(state.copyWith(products: updatedProducts));
   }
 
   String getCategoryName(String categoryId) {
@@ -243,6 +241,39 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
           ),
         )
         .name;
+  }
+
+  Future<void> _loadSavedProductsData() async {
+    final savedData = await LocalStorageService.loadProductsData();
+
+    if (!mounted || savedData == null) {
+      return;
+    }
+
+    state = ProductsState(
+      categories: List.unmodifiable(savedData.categories),
+      products: List.unmodifiable(savedData.products),
+    );
+  }
+
+  void _emitState(ProductsState nextState) {
+    if (!mounted) {
+      return;
+    }
+
+    state = ProductsState(
+      categories: List.unmodifiable(nextState.categories),
+      products: List.unmodifiable(nextState.products),
+    );
+
+    _saveLocalData();
+  }
+
+  void _saveLocalData() {
+    LocalStorageService.saveProductsData(
+      categories: state.categories,
+      products: state.products,
+    );
   }
 
   String _normalize(String value) {

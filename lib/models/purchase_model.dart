@@ -89,4 +89,48 @@ class PurchaseModel {
       items: items ?? this.items,
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'market': market,
+      'date': date.toIso8601String(),
+      'type': type.name,
+      'notes': notes,
+      'status': status.name,
+      'items': items.map((item) => item.toMap()).toList(),
+    };
+  }
+
+  factory PurchaseModel.fromMap(Map<String, dynamic> map) {
+    return PurchaseModel(
+      id: map['id'] as String? ?? '',
+      name: map['name'] as String? ?? '',
+      market: map['market'] as String? ?? '',
+      date: DateTime.tryParse(map['date'] as String? ?? '') ?? DateTime.now(),
+      type: _parsePurchaseType(map['type'] as String?),
+      notes: map['notes'] as String?,
+      status: _parsePurchaseStatus(map['status'] as String?),
+      items: ((map['items'] as List?) ?? []).map((item) {
+        return PurchaseItemModel.fromMap(
+          Map<String, dynamic>.from(item as Map),
+        );
+      }).toList(),
+    );
+  }
+
+  static PurchaseType _parsePurchaseType(String? value) {
+    return PurchaseType.values.firstWhere(
+      (type) => type.name == value,
+      orElse: () => PurchaseType.monthly,
+    );
+  }
+
+  static PurchaseStatus _parsePurchaseStatus(String? value) {
+    return PurchaseStatus.values.firstWhere(
+      (status) => status.name == value,
+      orElse: () => PurchaseStatus.inProgress,
+    );
+  }
 }

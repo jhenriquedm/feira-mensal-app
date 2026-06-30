@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 
 import '../models/purchase_item_model.dart';
 import '../models/purchase_model.dart';
+import '../services/local_storage_service.dart';
 
 final purchasesProvider =
     StateNotifierProvider<PurchasesViewModel, PurchasesState>((ref) {
@@ -29,7 +30,9 @@ class PurchasesState {
 }
 
 class PurchasesViewModel extends StateNotifier<PurchasesState> {
-  PurchasesViewModel() : super(const PurchasesState(purchases: []));
+  PurchasesViewModel() : super(const PurchasesState(purchases: [])) {
+    _loadSavedPurchases();
+  }
 
   final Uuid _uuid = const Uuid();
 
@@ -290,6 +293,16 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
     });
   }
 
+  Future<void> _loadSavedPurchases() async {
+    final savedPurchases = await LocalStorageService.loadPurchases();
+
+    if (!mounted || savedPurchases == null) {
+      return;
+    }
+
+    state = state.copyWith(purchases: List.unmodifiable(savedPurchases));
+  }
+
   void _updatePurchaseStatus({
     required String purchaseId,
     required PurchaseStatus status,
@@ -323,6 +336,12 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
     }
 
     state = state.copyWith(purchases: List.unmodifiable(purchases));
+
+    _saveLocalData();
+  }
+
+  void _saveLocalData() {
+    LocalStorageService.savePurchases(state.purchases);
   }
 
   bool _isSameDay(DateTime first, DateTime second) {

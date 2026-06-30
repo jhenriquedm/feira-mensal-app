@@ -51,4 +51,32 @@ class PurchaseItemModel {
       unitPrice: unitPrice ?? this.unitPrice,
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'productId': productId,
+      'productName': productName,
+      'productBrand': productBrand,
+      'categoryId': categoryId,
+      'categoryName': categoryName,
+      'unit': unit,
+      'quantity': quantity,
+      'unitPrice': unitPrice,
+    };
+  }
+
+  factory PurchaseItemModel.fromMap(Map<String, dynamic> map) {
+    return PurchaseItemModel(
+      id: map['id'] as String? ?? '',
+      productId: map['productId'] as String? ?? '',
+      productName: map['productName'] as String? ?? '',
+      productBrand: map['productBrand'] as String? ?? 'Sem marca',
+      categoryId: map['categoryId'] as String? ?? '',
+      categoryName: map['categoryName'] as String? ?? '',
+      unit: map['unit'] as String? ?? '',
+      quantity: (map['quantity'] as num?)?.toDouble() ?? 0,
+      unitPrice: (map['unitPrice'] as num?)?.toDouble() ?? 0,
+    );
+  }
 }
