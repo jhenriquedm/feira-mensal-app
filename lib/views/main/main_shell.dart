@@ -44,7 +44,10 @@ class _MainShellState extends State<MainShell> {
   }
 
   bool get _shouldHideAppBar {
-    return _selectedIndex == 0 || _selectedIndex == 1 || _selectedIndex == 2;
+    return _selectedIndex == 0 ||
+        _selectedIndex == 1 ||
+        _selectedIndex == 2 ||
+        _selectedIndex == 3;
   }
 
   @override
