@@ -42,6 +42,11 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
     final insights = _buildInsights(filteredRecords);
     final groupResults = _buildGroups(filteredRecords);
 
+    final totalAmount = allRecords.fold<double>(
+      0,
+      (sum, record) => sum + record.item.total,
+    );
+
     final hasAnyFilter =
         _selectedPeriod != _allFilterValue ||
         _selectedCategoryId != _allFilterValue ||
@@ -52,6 +57,7 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
         _ReportsHeader(
           totalPurchases: purchasesState.purchases.length,
           totalRecords: allRecords.length,
+          totalAmount: totalAmount,
         ),
         Expanded(
           child: allRecords.isEmpty
@@ -82,17 +88,14 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
                           _selectedProductId = value;
                         });
                       },
-                      onClearFilters: () {
-                        setState(() {
-                          _selectedPeriod = _allFilterValue;
-                          _selectedCategoryId = _allFilterValue;
-                          _selectedProductId = _allFilterValue;
-                        });
-                      },
+                      onClearFilters: _clearFilters,
                     ),
                     const SizedBox(height: 14),
                     if (filteredRecords.isEmpty)
-                      const _NoFilteredResultsState()
+                      _NoFilteredResultsState(
+                        hasAnyFilter: hasAnyFilter,
+                        onClearFilters: _clearFilters,
+                      )
                     else ...[
                       _InsightsPanel(insights: insights),
                       const SizedBox(height: 18),
@@ -119,6 +122,14 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
         ),
       ],
     );
+  }
+
+  void _clearFilters() {
+    setState(() {
+      _selectedPeriod = _allFilterValue;
+      _selectedCategoryId = _allFilterValue;
+      _selectedProductId = _allFilterValue;
+    });
   }
 
   List<_ReportRecord> _buildRecords(List<PurchaseModel> purchases) {
@@ -452,10 +463,12 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
     required _ReportGroupResult? topMarket,
   }) {
     final itemsText = records.length == 1 ? 'item' : 'itens';
+
     final purchasesCount = records
         .map((record) => record.purchaseId)
         .toSet()
         .length;
+
     final purchasesText = purchasesCount == 1 ? 'compra' : 'compras';
 
     final categoryText = topCategory == null
@@ -496,10 +509,12 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
 class _ReportsHeader extends StatelessWidget {
   final int totalPurchases;
   final int totalRecords;
+  final double totalAmount;
 
   const _ReportsHeader({
     required this.totalPurchases,
     required this.totalRecords,
+    required this.totalAmount,
   });
 
   @override
@@ -550,6 +565,64 @@ class _ReportsHeader extends StatelessWidget {
               ),
             ],
           ),
+          if (totalRecords > 0) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.16),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(
+                      Icons.payments_outlined,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 11),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Total geral analisado',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _reportCurrencyFormatter.format(totalAmount),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -589,6 +662,8 @@ class _HeaderInfoCard extends StatelessWidget {
               children: [
                 Text(
                   value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: foregroundColor,
                     fontSize: 18,
@@ -666,9 +741,10 @@ class _ReportsFilterPanel extends StatelessWidget {
                   ),
                 ),
                 if (hasAnyFilter)
-                  TextButton(
+                  TextButton.icon(
                     onPressed: onClearFilters,
-                    child: const Text('Limpar'),
+                    icon: const Icon(Icons.restart_alt_rounded, size: 18),
+                    label: const Text('Limpar'),
                   ),
               ],
             ),
@@ -715,8 +791,12 @@ class _ReportDropdownFilter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resolvedValue = options.any((option) => option.value == value)
+        ? value
+        : options.first.value;
+
     return DropdownButtonFormField<String>(
-      initialValue: value,
+      initialValue: resolvedValue,
       isExpanded: true,
       menuMaxHeight: 260,
       borderRadius: BorderRadius.circular(18),
@@ -1280,12 +1360,17 @@ class _GroupReportCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Text(
-            _reportCurrencyFormatter.format(group.total),
-            style: const TextStyle(
-              color: AppColors.primary,
-              fontSize: 14,
-              fontWeight: FontWeight.w900,
+          Flexible(
+            child: Text(
+              _reportCurrencyFormatter.format(group.total),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                color: AppColors.primary,
+                fontSize: 14,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ),
         ],
@@ -1352,12 +1437,18 @@ class _ReportItemCard extends StatelessWidget {
                   ),
                 ),
               ),
-              Text(
-                _reportCurrencyFormatter.format(record.item.total),
-                style: const TextStyle(
-                  color: AppColors.primary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  _reportCurrencyFormatter.format(record.item.total),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
               ),
             ],
@@ -1463,7 +1554,13 @@ class _EmptyReportsState extends StatelessWidget {
 }
 
 class _NoFilteredResultsState extends StatelessWidget {
-  const _NoFilteredResultsState();
+  final bool hasAnyFilter;
+  final VoidCallback onClearFilters;
+
+  const _NoFilteredResultsState({
+    required this.hasAnyFilter,
+    required this.onClearFilters,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1502,6 +1599,14 @@ class _NoFilteredResultsState extends StatelessWidget {
               height: 1.35,
             ),
           ),
+          if (hasAnyFilter) ...[
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: onClearFilters,
+              icon: const Icon(Icons.restart_alt_rounded),
+              label: const Text('Limpar filtros'),
+            ),
+          ],
         ],
       ),
     );
