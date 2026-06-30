@@ -19,6 +19,31 @@ final NumberFormat _detailsCurrencyFormatter = NumberFormat.currency(
 
 final DateFormat _detailsDateFormatter = DateFormat('dd/MM/yyyy');
 
+enum _PurchaseItemSortOption {
+  name,
+  highestValue,
+  lowestValue,
+  highestQuantity,
+  lowestQuantity,
+}
+
+extension _PurchaseItemSortOptionExtension on _PurchaseItemSortOption {
+  String get label {
+    switch (this) {
+      case _PurchaseItemSortOption.name:
+        return 'Nome A-Z';
+      case _PurchaseItemSortOption.highestValue:
+        return 'Maior valor';
+      case _PurchaseItemSortOption.lowestValue:
+        return 'Menor valor';
+      case _PurchaseItemSortOption.highestQuantity:
+        return 'Maior quantidade';
+      case _PurchaseItemSortOption.lowestQuantity:
+        return 'Menor quantidade';
+    }
+  }
+}
+
 class PurchaseDetailsPanel extends ConsumerStatefulWidget {
   final String purchaseId;
   final VoidCallback onClose;
@@ -35,18 +60,24 @@ class PurchaseDetailsPanel extends ConsumerStatefulWidget {
 }
 
 class _PurchaseDetailsPanelState extends ConsumerState<PurchaseDetailsPanel> {
+  final ScrollController _itemsScrollController = ScrollController();
+  final TextEditingController _itemSearchController = TextEditingController();
+
   String? _feedbackMessage;
   bool _feedbackIsError = false;
   Timer? _feedbackTimer;
-  final ScrollController _itemsScrollController = ScrollController();
 
   bool _isItemFormVisible = false;
   PurchaseItemModel? _itemBeingEdited;
+  PurchaseItemModel? _itemPendingDelete;
+
+  _PurchaseItemSortOption _itemSortOption = _PurchaseItemSortOption.name;
 
   @override
   void dispose() {
     _feedbackTimer?.cancel();
     _itemsScrollController.dispose();
+    _itemSearchController.dispose();
     super.dispose();
   }
 
@@ -58,6 +89,40 @@ class _PurchaseDetailsPanelState extends ConsumerState<PurchaseDetailsPanel> {
     }
 
     return null;
+  }
+
+  List<PurchaseItemModel> _processItems(List<PurchaseItemModel> items) {
+    final query = _normalizeText(_itemSearchController.text);
+
+    final filteredItems = items.where((item) {
+      final searchableText = _normalizeText(
+        '${item.productName} ${item.productBrand} ${item.categoryName} ${item.unit}',
+      );
+
+      return query.isEmpty || searchableText.contains(query);
+    }).toList();
+
+    filteredItems.sort((first, second) {
+      switch (_itemSortOption) {
+        case _PurchaseItemSortOption.name:
+          final firstName = '${first.productName} ${first.productBrand}'
+              .toLowerCase();
+          final secondName = '${second.productName} ${second.productBrand}'
+              .toLowerCase();
+
+          return firstName.compareTo(secondName);
+        case _PurchaseItemSortOption.highestValue:
+          return second.total.compareTo(first.total);
+        case _PurchaseItemSortOption.lowestValue:
+          return first.total.compareTo(second.total);
+        case _PurchaseItemSortOption.highestQuantity:
+          return second.quantity.compareTo(first.quantity);
+        case _PurchaseItemSortOption.lowestQuantity:
+          return first.quantity.compareTo(second.quantity);
+      }
+    });
+
+    return filteredItems;
   }
 
   void _showLocalMessage(String message, {bool isError = false}) {
@@ -88,6 +153,7 @@ class _PurchaseDetailsPanelState extends ConsumerState<PurchaseDetailsPanel> {
     setState(() {
       _isItemFormVisible = true;
       _itemBeingEdited = null;
+      _itemPendingDelete = null;
     });
   }
 
@@ -95,6 +161,7 @@ class _PurchaseDetailsPanelState extends ConsumerState<PurchaseDetailsPanel> {
     setState(() {
       _isItemFormVisible = true;
       _itemBeingEdited = item;
+      _itemPendingDelete = null;
     });
   }
 
@@ -105,10 +172,34 @@ class _PurchaseDetailsPanelState extends ConsumerState<PurchaseDetailsPanel> {
     });
   }
 
-  void _deleteItem(PurchaseModel purchase, PurchaseItemModel item) {
+  void _requestDeleteItem(PurchaseItemModel item) {
+    setState(() {
+      _itemPendingDelete = item;
+      _isItemFormVisible = false;
+      _itemBeingEdited = null;
+    });
+  }
+
+  void _cancelDeleteItem() {
+    setState(() {
+      _itemPendingDelete = null;
+    });
+  }
+
+  void _confirmDeleteItem(PurchaseModel purchase) {
+    final item = _itemPendingDelete;
+
+    if (item == null) {
+      return;
+    }
+
     final success = ref
         .read(purchasesProvider.notifier)
         .deleteItem(purchaseId: purchase.id, itemId: item.id);
+
+    setState(() {
+      _itemPendingDelete = null;
+    });
 
     if (!success) {
       _showLocalMessage(
@@ -134,6 +225,12 @@ class _PurchaseDetailsPanelState extends ConsumerState<PurchaseDetailsPanel> {
     _showLocalMessage('Compra finalizada com sucesso.');
   }
 
+  void _clearItemSearch() {
+    setState(() {
+      _itemSearchController.clear();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final purchasesState = ref.watch(purchasesProvider);
@@ -145,15 +242,7 @@ class _PurchaseDetailsPanelState extends ConsumerState<PurchaseDetailsPanel> {
       return const _DetailsShell(child: _PurchaseNotFoundState());
     }
 
-    final sortedItems = [...purchase.items]
-      ..sort((first, second) {
-        final firstName = '${first.productName} ${first.productBrand}'
-            .toLowerCase();
-        final secondName = '${second.productName} ${second.productBrand}'
-            .toLowerCase();
-
-        return firstName.compareTo(secondName);
-      });
+    final processedItems = _processItems(purchase.items);
 
     final activeProducts =
         productsState.products.where((product) => product.isActive).toList()
@@ -165,6 +254,8 @@ class _PurchaseDetailsPanelState extends ConsumerState<PurchaseDetailsPanel> {
 
             return firstName.compareTo(secondName);
           });
+
+    final hasActiveSearch = _itemSearchController.text.trim().isNotEmpty;
 
     return _DetailsShell(
       child: Column(
@@ -184,6 +275,16 @@ class _PurchaseDetailsPanelState extends ConsumerState<PurchaseDetailsPanel> {
                     isError: _feedbackIsError,
                   ),
           ),
+          if (_itemPendingDelete != null) ...[
+            const SizedBox(height: 12),
+            _DeleteItemConfirmationPanel(
+              item: _itemPendingDelete!,
+              onCancel: _cancelDeleteItem,
+              onConfirm: () {
+                _confirmDeleteItem(purchase);
+              },
+            ),
+          ],
           if (_isItemFormVisible) ...[
             const SizedBox(height: 12),
             _PurchaseItemForm(
@@ -221,20 +322,41 @@ class _PurchaseDetailsPanelState extends ConsumerState<PurchaseDetailsPanel> {
                 ),
             ],
           ),
+          if (purchase.items.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _ItemControls(
+              searchController: _itemSearchController,
+              sortOption: _itemSortOption,
+              onSearchChanged: (_) {
+                setState(() {});
+              },
+              onClearSearch: _clearItemSearch,
+              onSortChanged: (value) {
+                setState(() {
+                  _itemSortOption = value;
+                });
+              },
+            ),
+          ],
           const SizedBox(height: 12),
-          if (activeProducts.isEmpty && !purchase.isCompleted)
+          if (purchase.items.isEmpty &&
+              activeProducts.isEmpty &&
+              !purchase.isCompleted)
             const _NoProductsWarning()
-          else if (sortedItems.isEmpty)
+          else if (purchase.items.isEmpty)
             const _EmptyItemsState()
+          else if (processedItems.isEmpty)
+            _NoItemsFoundState(
+              hasActiveSearch: hasActiveSearch,
+              onClearSearch: _clearItemSearch,
+            )
           else
             _ScrollableItemsList(
-              items: sortedItems,
+              items: processedItems,
               scrollController: _itemsScrollController,
               isPurchaseCompleted: purchase.isCompleted,
               onEdit: _openEditItemForm,
-              onDelete: (item) {
-                _deleteItem(purchase, item);
-              },
+              onDelete: _requestDeleteItem,
             ),
           const SizedBox(height: 18),
           SizedBox(
@@ -555,6 +677,200 @@ class _DetailsFeedbackMessage extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _DeleteItemConfirmationPanel extends StatelessWidget {
+  final PurchaseItemModel item;
+  final VoidCallback onCancel;
+  final VoidCallback onConfirm;
+
+  const _DeleteItemConfirmationPanel({
+    required this.item,
+    required this.onCancel,
+    required this.onConfirm,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 13),
+      decoration: BoxDecoration(
+        color: AppColors.danger.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.danger.withValues(alpha: 0.28)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppColors.danger.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: AppColors.danger,
+                  size: 21,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Excluir "${item.productName}"?',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Essa ação removerá o item desta compra, mas não apagará o produto cadastrado.',
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: onCancel,
+                  child: const Text('Cancelar'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.danger,
+                  ),
+                  onPressed: onConfirm,
+                  child: const Text('Excluir'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ItemControls extends StatelessWidget {
+  final TextEditingController searchController;
+  final _PurchaseItemSortOption sortOption;
+  final ValueChanged<String> onSearchChanged;
+  final VoidCallback onClearSearch;
+  final ValueChanged<_PurchaseItemSortOption> onSortChanged;
+
+  const _ItemControls({
+    required this.searchController,
+    required this.sortOption,
+    required this.onSearchChanged,
+    required this.onClearSearch,
+    required this.onSortChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        TextField(
+          controller: searchController,
+          textCapitalization: TextCapitalization.words,
+          onChanged: onSearchChanged,
+          decoration: InputDecoration(
+            hintText: 'Buscar item, marca ou categoria',
+            prefixIcon: const Icon(Icons.search_rounded),
+            suffixIcon: searchController.text.trim().isEmpty
+                ? null
+                : IconButton(
+                    tooltip: 'Limpar busca',
+                    onPressed: onClearSearch,
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+            filled: true,
+            isDense: true,
+            fillColor: AppColors.background,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 13,
+            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: AppColors.border),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(
+                color: AppColors.primary,
+                width: 1.5,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          height: 56,
+          padding: const EdgeInsets.fromLTRB(12, 7, 10, 6),
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.sort_rounded,
+                color: AppColors.textSecondary,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<_PurchaseItemSortOption>(
+                    value: sortOption,
+                    isExpanded: true,
+                    borderRadius: BorderRadius.circular(16),
+                    dropdownColor: AppColors.surface,
+                    items: _PurchaseItemSortOption.values.map((option) {
+                      return DropdownMenuItem<_PurchaseItemSortOption>(
+                        value: option,
+                        child: Text(
+                          option.label,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value == null) {
+                        return;
+                      }
+
+                      onSortChanged(value);
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1209,7 +1525,7 @@ class _PurchaseItemCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '${item.productBrand} • ${item.quantity} ${item.unit} • ${_detailsCurrencyFormatter.format(item.unitPrice)}',
+                  '${item.productBrand} • ${_formatQuantity(item.quantity)} ${item.unit} • ${_detailsCurrencyFormatter.format(item.unitPrice)}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -1354,6 +1670,65 @@ class _EmptyItemsState extends StatelessWidget {
   }
 }
 
+class _NoItemsFoundState extends StatelessWidget {
+  final bool hasActiveSearch;
+  final VoidCallback onClearSearch;
+
+  const _NoItemsFoundState({
+    required this.hasActiveSearch,
+    required this.onClearSearch,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(18, 22, 18, 22),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.search_off_rounded,
+            size: 34,
+            color: AppColors.textSecondary.withValues(alpha: 0.8),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Nenhum item encontrado',
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Altere a busca ou a ordenação para visualizar outros itens.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+              height: 1.35,
+            ),
+          ),
+          if (hasActiveSearch) ...[
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: onClearSearch,
+              icon: const Icon(Icons.restart_alt_rounded),
+              label: const Text('Limpar busca'),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _PurchaseNotFoundState extends StatelessWidget {
   const _PurchaseNotFoundState();
 
@@ -1389,6 +1764,14 @@ String _productOptionLabel(ProductModel product) {
 
 String _normalizeText(String value) {
   return value.trim().toLowerCase();
+}
+
+String _formatQuantity(double value) {
+  if (value == value.roundToDouble()) {
+    return value.toInt().toString();
+  }
+
+  return value.toStringAsFixed(2).replaceAll('.', ',');
 }
 
 String _formatCurrencyDigits(String digits) {
