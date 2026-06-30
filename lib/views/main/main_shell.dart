@@ -17,13 +17,19 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = const [
-    HomeView(),
-    ProductsView(),
-    PurchasesView(),
-    ReportsView(),
-    SettingsView(),
-  ];
+  List<Widget> get _pages {
+    return [
+      HomeView(
+        onProductsTap: () => _onTap(1),
+        onPurchasesTap: () => _onTap(2),
+        onReportsTap: () => _onTap(3),
+      ),
+      const ProductsView(),
+      const PurchasesView(),
+      const ReportsView(),
+      const SettingsView(),
+    ];
+  }
 
   void _onTap(int index) {
     if (_selectedIndex == index) {
