@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/purchase_model.dart';
 import '../../viewmodels/purchases_viewmodel.dart';
+import 'purchase_details_panel.dart';
 
 final NumberFormat _currencyFormatter = NumberFormat.currency(
   locale: 'pt_BR',
@@ -51,6 +52,7 @@ class _PurchasesViewState extends ConsumerState<PurchasesView> {
   bool _isPurchaseFormVisible = false;
   PurchaseModel? _purchaseBeingEdited;
   PurchaseModel? _purchasePendingDelete;
+  String? _selectedPurchaseId;
 
   @override
   void dispose() {
@@ -92,10 +94,26 @@ class _PurchasesViewState extends ConsumerState<PurchasesView> {
     });
   }
 
+  void _openPurchaseDetails(PurchaseModel purchase) {
+    setState(() {
+      _selectedPurchaseId = purchase.id;
+      _isPurchaseFormVisible = false;
+      _purchaseBeingEdited = null;
+      _purchasePendingDelete = null;
+    });
+  }
+
+  void _closePurchaseDetails() {
+    setState(() {
+      _selectedPurchaseId = null;
+    });
+  }
+
   void _openCreatePurchaseForm() {
     setState(() {
       _purchaseBeingEdited = null;
       _purchasePendingDelete = null;
+      _selectedPurchaseId = null;
       _isPurchaseFormVisible = true;
     });
   }
@@ -104,6 +122,7 @@ class _PurchasesViewState extends ConsumerState<PurchasesView> {
     setState(() {
       _purchaseBeingEdited = purchase;
       _purchasePendingDelete = null;
+      _selectedPurchaseId = null;
       _isPurchaseFormVisible = true;
     });
   }
@@ -166,6 +185,7 @@ class _PurchasesViewState extends ConsumerState<PurchasesView> {
       _purchasePendingDelete = purchase;
       _isPurchaseFormVisible = false;
       _purchaseBeingEdited = null;
+      _selectedPurchaseId = null;
     });
   }
 
@@ -203,7 +223,10 @@ class _PurchasesViewState extends ConsumerState<PurchasesView> {
     final purchases = _sortPurchases(state.purchases);
     final viewModel = ref.read(purchasesProvider.notifier);
 
-    final hasOverlay = _isPurchaseFormVisible || _purchasePendingDelete != null;
+    final hasOverlay =
+        _isPurchaseFormVisible ||
+        _purchasePendingDelete != null ||
+        _selectedPurchaseId != null;
 
     return Scaffold(
       body: SafeArea(
@@ -237,6 +260,9 @@ class _PurchasesViewState extends ConsumerState<PurchasesView> {
 
                             return _PurchaseCard(
                               purchase: purchase,
+                              onTap: () {
+                                _openPurchaseDetails(purchase);
+                              },
                               onEdit: () {
                                 _openEditPurchaseForm(purchase);
                               },
@@ -264,6 +290,13 @@ class _PurchasesViewState extends ConsumerState<PurchasesView> {
                   purchase: _purchasePendingDelete!,
                   onCancel: _cancelDeletePurchase,
                   onConfirm: _confirmDeletePurchase,
+                ),
+              ),
+            if (_selectedPurchaseId != null)
+              _ScreenOverlay(
+                child: PurchaseDetailsPanel(
+                  purchaseId: _selectedPurchaseId!,
+                  onClose: _closePurchaseDetails,
                 ),
               ),
           ],
@@ -456,11 +489,13 @@ class _LocalFeedbackMessage extends StatelessWidget {
 
 class _PurchaseCard extends StatelessWidget {
   final PurchaseModel purchase;
+  final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   const _PurchaseCard({
     required this.purchase,
+    required this.onTap,
     required this.onEdit,
     required this.onDelete,
   });
@@ -470,161 +505,177 @@ class _PurchaseCard extends StatelessWidget {
     final isCompleted = purchase.isCompleted;
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(17, 16, 10, 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: isCompleted
-                        ? AppColors.success.withValues(alpha: 0.11)
-                        : AppColors.primary.withValues(alpha: 0.11),
-                    borderRadius: BorderRadius.circular(15),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(17, 16, 10, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: isCompleted
+                          ? AppColors.success.withValues(alpha: 0.11)
+                          : AppColors.primary.withValues(alpha: 0.11),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Icon(
+                      isCompleted
+                          ? Icons.check_circle_outline_rounded
+                          : Icons.shopping_cart_checkout_rounded,
+                      color: isCompleted
+                          ? AppColors.success
+                          : AppColors.primary,
+                    ),
                   ),
-                  child: Icon(
-                    isCompleted
-                        ? Icons.check_circle_outline_rounded
-                        : Icons.shopping_cart_checkout_rounded,
-                    color: isCompleted ? AppColors.success : AppColors.primary,
-                  ),
-                ),
-                const SizedBox(width: 13),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        purchase.name,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w800),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.storefront_outlined,
-                            size: 16,
-                            color: AppColors.textSecondary,
-                          ),
-                          const SizedBox(width: 5),
-                          Expanded(
-                            child: Text(
-                              purchase.market,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodyMedium,
+                  const SizedBox(width: 13),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          purchase.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.storefront_outlined,
+                              size: 16,
+                              color: AppColors.textSecondary,
                             ),
+                            const SizedBox(width: 5),
+                            Expanded(
+                              child: Text(
+                                purchase.market,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  PopupMenuButton<String>(
+                    tooltip: 'Opções',
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        onEdit();
+                      }
+
+                      if (value == 'delete') {
+                        onDelete();
+                      }
+                    },
+                    itemBuilder: (context) {
+                      return const [
+                        PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.edit_outlined,
+                                size: 20,
+                                color: AppColors.primary,
+                              ),
+                              SizedBox(width: 10),
+                              Text('Editar'),
+                            ],
                           ),
-                        ],
+                        ),
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.delete_outline_rounded,
+                                size: 20,
+                                color: AppColors.danger,
+                              ),
+                              SizedBox(width: 10),
+                              Text('Excluir'),
+                            ],
+                          ),
+                        ),
+                      ];
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 15),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _InformationChip(
+                    icon: Icons.calendar_today_outlined,
+                    label: _dateFormatter.format(purchase.date),
+                  ),
+                  _InformationChip(
+                    icon: Icons.category_outlined,
+                    label: purchase.type.label,
+                  ),
+                  _InformationChip(
+                    icon: Icons.inventory_2_outlined,
+                    label: '${purchase.distinctItemsCount} itens',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              const Divider(height: 1),
+              const SizedBox(height: 13),
+              Row(
+                children: [
+                  _StatusChip(isCompleted: isCompleted),
+                  const Spacer(),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      const Text(
+                        'Total',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 11,
+                        ),
+                      ),
+                      Text(
+                        _currencyFormatter.format(purchase.total),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w800,
+                            ),
                       ),
                     ],
                   ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Toque para ver detalhes',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
                 ),
-                PopupMenuButton<String>(
-                  tooltip: 'Opções',
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  onSelected: (value) {
-                    if (value == 'edit') {
-                      onEdit();
-                    }
-
-                    if (value == 'delete') {
-                      onDelete();
-                    }
-                  },
-                  itemBuilder: (context) {
-                    return const [
-                      PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.edit_outlined,
-                              size: 20,
-                              color: AppColors.primary,
-                            ),
-                            SizedBox(width: 10),
-                            Text('Editar'),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.delete_outline_rounded,
-                              size: 20,
-                              color: AppColors.danger,
-                            ),
-                            SizedBox(width: 10),
-                            Text('Excluir'),
-                          ],
-                        ),
-                      ),
-                    ];
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 15),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _InformationChip(
-                  icon: Icons.calendar_today_outlined,
-                  label: _dateFormatter.format(purchase.date),
-                ),
-                _InformationChip(
-                  icon: Icons.category_outlined,
-                  label: purchase.type.label,
-                ),
-                _InformationChip(
-                  icon: Icons.inventory_2_outlined,
-                  label: '${purchase.distinctItemsCount} itens',
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            const Divider(height: 1),
-            const SizedBox(height: 13),
-            Row(
-              children: [
-                _StatusChip(isCompleted: isCompleted),
-                const Spacer(),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    const Text(
-                      'Total',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 11,
-                      ),
-                    ),
-                    Text(
-                      _currencyFormatter.format(purchase.total),
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
