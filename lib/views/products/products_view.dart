@@ -6,6 +6,7 @@ import '../../core/theme/app_colors.dart';
 import '../../models/category_model.dart';
 import '../../models/product_model.dart';
 import '../../viewmodels/products_viewmodel.dart';
+import '../../viewmodels/purchases_viewmodel.dart';
 
 class ProductsView extends ConsumerWidget {
   const ProductsView({super.key});
@@ -13,6 +14,7 @@ class ProductsView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(productsProvider);
+    final linkedProductIds = ref.watch(productIdsLinkedToPurchasesProvider);
     final viewModel = ref.read(productsProvider.notifier);
 
     return DefaultTabController(
@@ -65,7 +67,11 @@ class ProductsView extends ConsumerWidget {
           Expanded(
             child: TabBarView(
               children: [
-                _ProductsTab(state: state, viewModel: viewModel),
+                _ProductsTab(
+                  state: state,
+                  viewModel: viewModel,
+                  linkedProductIds: linkedProductIds,
+                ),
                 _CategoriesTab(state: state, viewModel: viewModel),
               ],
             ),
@@ -79,8 +85,13 @@ class ProductsView extends ConsumerWidget {
 class _ProductsTab extends StatelessWidget {
   final ProductsState state;
   final ProductsViewModel viewModel;
+  final Set<String> linkedProductIds;
 
-  const _ProductsTab({required this.state, required this.viewModel});
+  const _ProductsTab({
+    required this.state,
+    required this.viewModel,
+    required this.linkedProductIds,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -96,9 +107,12 @@ class _ProductsTab extends StatelessWidget {
           : ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: products.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 10),
+              separatorBuilder: (context, index) {
+                return const SizedBox(height: 10);
+              },
               itemBuilder: (context, index) {
                 final product = products[index];
+                final isLinked = linkedProductIds.contains(product.id);
 
                 return Card(
                   child: ListTile(
@@ -113,20 +127,50 @@ class _ProductsTab extends StatelessWidget {
                             : AppColors.textSecondary,
                       ),
                     ),
-                    title: Text(
-                      product.name,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: product.isActive
-                            ? AppColors.textPrimary
-                            : AppColors.textSecondary,
-                      ),
+                    title: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            product.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: product.isActive
+                                  ? AppColors.textPrimary
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                        if (isLinked) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.10),
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            child: const Text(
+                              'Usado',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                     subtitle: Text(
-                      '${viewModel.getCategoryName(product.categoryId)} • ${product.unit} • ${product.brand ?? ''}\n'
-                      '${product.isActive ? 'Ativo' : 'Inativo'}',
+                      '${viewModel.getCategoryName(product.categoryId)} • '
+                      '${product.unit} • ${product.brand ?? 'Sem marca'}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    isThreeLine: true,
                     trailing: PopupMenuButton<String>(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -137,12 +181,16 @@ class _ProductsTab extends StatelessWidget {
                             context,
                             state,
                             viewModel,
+                            linkedProductIds,
                             product: product,
                           );
                         }
 
                         if (value == 'delete') {
-                          if (!viewModel.canDeleteProduct(product.id)) {
+                          if (!viewModel.canDeleteProduct(
+                            product.id,
+                            linkedProductIds: linkedProductIds,
+                          )) {
                             _showSuccess(
                               context,
                               'Produto não pode ser excluído, pois está vinculado a uma compra.',
@@ -152,49 +200,54 @@ class _ProductsTab extends StatelessWidget {
                           }
 
                           viewModel.deleteProduct(product.id);
+
                           _showSuccess(
                             context,
                             'Produto excluído com sucesso.',
                           );
                         }
                       },
-                      itemBuilder: (context) => const [
-                        PopupMenuItem(
-                          value: 'edit',
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.edit_outlined,
-                                size: 20,
-                                color: AppColors.primary,
-                              ),
-                              SizedBox(width: 10),
-                              Text('Editar'),
-                            ],
+                      itemBuilder: (context) {
+                        return const [
+                          PopupMenuItem(
+                            value: 'edit',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.edit_outlined,
+                                  size: 20,
+                                  color: AppColors.primary,
+                                ),
+                                SizedBox(width: 10),
+                                Text('Editar'),
+                              ],
+                            ),
                           ),
-                        ),
-                        PopupMenuItem(
-                          value: 'delete',
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.delete_outline,
-                                size: 20,
-                                color: AppColors.danger,
-                              ),
-                              SizedBox(width: 10),
-                              Text('Excluir'),
-                            ],
+                          PopupMenuItem(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.delete_outline,
+                                  size: 20,
+                                  color: AppColors.danger,
+                                ),
+                                SizedBox(width: 10),
+                                Text('Excluir'),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ];
+                      },
                     ),
                   ),
                 );
               },
             ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showProductDialog(context, state, viewModel),
+        onPressed: () {
+          _showProductDialog(context, state, viewModel, linkedProductIds);
+        },
         child: const Icon(Icons.add),
       ),
     );
@@ -203,20 +256,25 @@ class _ProductsTab extends StatelessWidget {
   void _showProductDialog(
     BuildContext context,
     ProductsState state,
-    ProductsViewModel viewModel, {
+    ProductsViewModel viewModel,
+    Set<String> linkedProductIds, {
     ProductModel? product,
   }) {
     final formKey = GlobalKey<FormState>();
 
     final nameController = TextEditingController(text: product?.name ?? '');
+
     final brandController = TextEditingController(text: product?.brand ?? '');
 
     String? selectedCategoryId = product?.categoryId;
     String? selectedUnit = product?.unit;
     bool isActive = product?.isActive ?? true;
 
+    final isLinked = product != null && linkedProductIds.contains(product.id);
+
     final categories = viewModel.activeCategories;
-    final units = ['Caixa', 'g', 'Kg', 'Litro', 'ml', 'Pacote', 'Unidade'];
+    final units = ['Caixa', 'g', 'Kg', 'Litro', 'ml', 'Pacote', 'Unidade']
+      ..sort();
 
     showDialog(
       context: context,
@@ -233,6 +291,44 @@ class _ProductsTab extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        if (isLinked) ...[
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.09),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: AppColors.primary.withValues(
+                                  alpha: 0.22,
+                                ),
+                              ),
+                            ),
+                            child: const Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.info_outline_rounded,
+                                  size: 19,
+                                  color: AppColors.primary,
+                                ),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Este produto já foi usado em uma compra. Para preservar o histórico, altere apenas o campo Ativo/Inativo.',
+                                    style: TextStyle(
+                                      color: AppColors.primary,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      height: 1.35,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                         _premiumTextField(
                           controller: nameController,
                           label: 'Nome do produto',
@@ -257,7 +353,7 @@ class _ProductsTab extends StatelessWidget {
                           borderRadius: BorderRadius.circular(18),
                           decoration: _inputDecoration('Categoria'),
                           items: categories.map((category) {
-                            return DropdownMenuItem(
+                            return DropdownMenuItem<String>(
                               value: category.id,
                               child: Text(
                                 category.name,
@@ -269,10 +365,13 @@ class _ProductsTab extends StatelessWidget {
                             if (value == null || value.isEmpty) {
                               return 'Selecione uma categoria';
                             }
+
                             return null;
                           },
                           onChanged: (value) {
-                            setState(() => selectedCategoryId = value);
+                            setState(() {
+                              selectedCategoryId = value;
+                            });
                           },
                         ),
                         const SizedBox(height: 12),
@@ -284,7 +383,7 @@ class _ProductsTab extends StatelessWidget {
                           borderRadius: BorderRadius.circular(18),
                           decoration: _inputDecoration('Unidade de medida'),
                           items: units.map((unit) {
-                            return DropdownMenuItem(
+                            return DropdownMenuItem<String>(
                               value: unit,
                               child: Text(unit),
                             );
@@ -293,10 +392,13 @@ class _ProductsTab extends StatelessWidget {
                             if (value == null || value.isEmpty) {
                               return 'Selecione uma unidade de medida';
                             }
+
                             return null;
                           },
                           onChanged: (value) {
-                            setState(() => selectedUnit = value);
+                            setState(() {
+                              selectedUnit = value;
+                            });
                           },
                         ),
                         const SizedBox(height: 12),
@@ -307,9 +409,20 @@ class _ProductsTab extends StatelessWidget {
                             alpha: 0.35,
                           ),
                           contentPadding: EdgeInsets.zero,
-                          title: Text(isActive ? 'Ativo' : 'Inativo'),
+                          title: const Text('Ativo/Inativo'),
+                          subtitle: Text(
+                            isActive
+                                ? 'Produto disponível para novas compras.'
+                                : 'Produto oculto para novas compras.',
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
                           onChanged: (value) {
-                            setState(() => isActive = value);
+                            setState(() {
+                              isActive = value;
+                            });
                           },
                         ),
                       ],
@@ -319,15 +432,18 @@ class _ProductsTab extends StatelessWidget {
               );
             },
           ),
-
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                Navigator.pop(context);
+              },
               child: const Text('Cancelar'),
             ),
             ElevatedButton(
               onPressed: () {
-                if (!formKey.currentState!.validate()) return;
+                if (!formKey.currentState!.validate()) {
+                  return;
+                }
 
                 final exists = viewModel.productAlreadyExists(
                   name: nameController.text,
@@ -352,8 +468,28 @@ class _ProductsTab extends StatelessWidget {
                     unit: selectedUnit!,
                     isActive: isActive,
                   );
+
                   _showSuccess(context, 'Produto cadastrado com sucesso.');
                 } else {
+                  final canEditCriticalData = viewModel
+                      .canEditProductCriticalData(
+                        product: product,
+                        linkedProductIds: linkedProductIds,
+                        name: nameController.text,
+                        brand: brandController.text,
+                        categoryId: selectedCategoryId!,
+                        unit: selectedUnit!,
+                      );
+
+                  if (!canEditCriticalData) {
+                    _showSuccess(
+                      context,
+                      'Este produto já foi usado em uma compra. Para preservar o histórico, altere apenas o campo Ativo/Inativo.',
+                      isError: true,
+                    );
+                    return;
+                  }
+
                   viewModel.updateProduct(
                     id: product.id,
                     name: nameController.text,
@@ -362,6 +498,7 @@ class _ProductsTab extends StatelessWidget {
                     unit: selectedUnit!,
                     isActive: isActive,
                   );
+
                   _showSuccess(context, 'Produto atualizado com sucesso.');
                 }
 
@@ -404,7 +541,7 @@ class _CategoriesTab extends StatelessWidget {
               children: [
                 Positioned(
                   top: 6,
-                  right: 6,
+                  left: 6,
                   child: PopupMenuButton<String>(
                     padding: EdgeInsets.zero,
                     iconSize: 20,
@@ -431,42 +568,45 @@ class _CategoriesTab extends StatelessWidget {
                         }
 
                         viewModel.deleteCategory(category.id);
+
                         _showSuccess(
                           context,
                           'Categoria excluída com sucesso.',
                         );
                       }
                     },
-                    itemBuilder: (context) => const [
-                      PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.edit_outlined,
-                              size: 20,
-                              color: AppColors.primary,
-                            ),
-                            SizedBox(width: 10),
-                            Text('Editar'),
-                          ],
+                    itemBuilder: (context) {
+                      return const [
+                        PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.edit_outlined,
+                                size: 20,
+                                color: AppColors.primary,
+                              ),
+                              SizedBox(width: 10),
+                              Text('Editar'),
+                            ],
+                          ),
                         ),
-                      ),
-                      PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.delete_outline,
-                              size: 20,
-                              color: AppColors.danger,
-                            ),
-                            SizedBox(width: 10),
-                            Text('Excluir'),
-                          ],
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.delete_outline,
+                                size: 20,
+                                color: AppColors.danger,
+                              ),
+                              SizedBox(width: 10),
+                              Text('Excluir'),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ];
+                    },
                   ),
                 ),
                 InkWell(
@@ -516,7 +656,9 @@ class _CategoriesTab extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showCategoryDialog(context, viewModel),
+        onPressed: () {
+          _showCategoryDialog(context, viewModel);
+        },
         child: const Icon(Icons.add),
       ),
     );
@@ -529,6 +671,7 @@ class _CategoriesTab extends StatelessWidget {
   }) {
     final formKey = GlobalKey<FormState>();
     final controller = TextEditingController(text: category?.name ?? '');
+
     bool isActive = category?.isActive ?? true;
 
     showDialog(
@@ -558,9 +701,20 @@ class _CategoriesTab extends StatelessWidget {
                         alpha: 0.35,
                       ),
                       contentPadding: EdgeInsets.zero,
-                      title: Text(isActive ? 'Ativo' : 'Inativo'),
+                      title: const Text('Ativo/Inativo'),
+                      subtitle: Text(
+                        isActive
+                            ? 'Categoria disponível para novos produtos.'
+                            : 'Categoria ocultada para novos produtos.',
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
                       onChanged: (value) {
-                        setState(() => isActive = value);
+                        setState(() {
+                          isActive = value;
+                        });
                       },
                     ),
                   ],
@@ -570,18 +724,23 @@ class _CategoriesTab extends StatelessWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                Navigator.pop(context);
+              },
               child: const Text('Cancelar'),
             ),
             ElevatedButton(
               onPressed: () {
-                if (!formKey.currentState!.validate()) return;
+                if (!formKey.currentState!.validate()) {
+                  return;
+                }
 
                 if (category == null) {
                   viewModel.addCategory(
                     name: controller.text,
                     isActive: isActive,
                   );
+
                   _showSuccess(context, 'Categoria cadastrada com sucesso.');
                 } else {
                   viewModel.updateCategory(
@@ -589,6 +748,7 @@ class _CategoriesTab extends StatelessWidget {
                     name: controller.text,
                     isActive: isActive,
                   );
+
                   _showSuccess(context, 'Categoria atualizada com sucesso.');
                 }
 
@@ -615,6 +775,7 @@ Widget _premiumTextField({
     maxLength: maxLength,
     inputFormatters: [
       FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZÀ-ÿ0-9 ]')),
+      LengthLimitingTextInputFormatter(maxLength),
     ],
     decoration: _inputDecoration(
       label,
@@ -623,6 +784,11 @@ Widget _premiumTextField({
       if (value == null || value.trim().isEmpty) {
         return requiredMessage;
       }
+
+      if (value.trim().length < 2) {
+        return 'Informe pelo menos 2 caracteres';
+      }
+
       return null;
     },
   );

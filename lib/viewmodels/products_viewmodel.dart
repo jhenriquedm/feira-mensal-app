@@ -50,11 +50,15 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
         ),
       );
 
-  final _uuid = const Uuid();
+  final Uuid _uuid = const Uuid();
 
   List<CategoryModel> get sortedCategories {
     final list = [...state.categories];
-    list.sort((a, b) => a.name.compareTo(b.name));
+
+    list.sort((first, second) {
+      return first.name.compareTo(second.name);
+    });
+
     return list;
   }
 
@@ -62,13 +66,24 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
     final list = state.categories
         .where((category) => category.isActive)
         .toList();
-    list.sort((a, b) => a.name.compareTo(b.name));
+
+    list.sort((first, second) {
+      return first.name.compareTo(second.name);
+    });
+
     return list;
   }
 
   List<ProductModel> get sortedProducts {
     final list = [...state.products];
-    list.sort((a, b) => a.name.compareTo(b.name));
+
+    list.sort((first, second) {
+      final firstName = '${first.name} ${first.brand ?? ''}'.toLowerCase();
+      final secondName = '${second.name} ${second.brand ?? ''}'.toLowerCase();
+
+      return firstName.compareTo(secondName);
+    });
+
     return list;
   }
 
@@ -107,7 +122,9 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
     required bool isActive,
   }) {
     final updatedCategories = state.categories.map((category) {
-      if (category.id != id) return category;
+      if (category.id != id) {
+        return category;
+      }
 
       return CategoryModel(
         id: category.id,
@@ -121,7 +138,9 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
   }
 
   bool canDeleteCategory(String categoryId) {
-    return !state.products.any((product) => product.categoryId == categoryId);
+    return !state.products.any((product) {
+      return product.categoryId == categoryId;
+    });
   }
 
   void deleteCategory(String categoryId) {
@@ -160,7 +179,9 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
     required bool isActive,
   }) {
     final updatedProducts = state.products.map((product) {
-      if (product.id != id) return product;
+      if (product.id != id) {
+        return product;
+      }
 
       return ProductModel(
         id: id,
@@ -176,9 +197,33 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
     state = state.copyWith(products: updatedProducts);
   }
 
-  bool canDeleteProduct(String productId) {
-    // Futuramente: verificar se o produto está vinculado a alguma compra.
-    return true;
+  bool canDeleteProduct(
+    String productId, {
+    required Set<String> linkedProductIds,
+  }) {
+    return !linkedProductIds.contains(productId);
+  }
+
+  bool canEditProductCriticalData({
+    required ProductModel product,
+    required Set<String> linkedProductIds,
+    required String name,
+    required String brand,
+    required String categoryId,
+    required String unit,
+  }) {
+    final isLinked = linkedProductIds.contains(product.id);
+
+    if (!isLinked) {
+      return true;
+    }
+
+    final changedName = _normalize(product.name) != _normalize(name);
+    final changedBrand = _normalize(product.brand ?? '') != _normalize(brand);
+    final changedCategory = product.categoryId != categoryId;
+    final changedUnit = product.unit != unit;
+
+    return !changedName && !changedBrand && !changedCategory && !changedUnit;
   }
 
   void deleteProduct(String id) {
