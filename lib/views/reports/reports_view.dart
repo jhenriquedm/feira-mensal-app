@@ -39,6 +39,7 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
     final periodOptions = _buildPeriodOptions(purchasesState.purchases);
     final categoryOptions = _buildCategoryOptions(allRecords);
     final productOptions = _buildProductOptions(allRecords);
+    final insights = _buildInsights(filteredRecords);
     final groupResults = _buildGroups(filteredRecords);
 
     final hasAnyFilter =
@@ -93,6 +94,8 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
                     if (filteredRecords.isEmpty)
                       const _NoFilteredResultsState()
                     else ...[
+                      _InsightsPanel(insights: insights),
+                      const SizedBox(height: 18),
                       _MetricsGrid(records: filteredRecords),
                       const SizedBox(height: 18),
                       _GroupSelector(
@@ -230,6 +233,85 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
     ];
   }
 
+  _ReportInsights _buildInsights(List<_ReportRecord> records) {
+    if (records.isEmpty) {
+      return _ReportInsights.empty();
+    }
+
+    final total = records.fold<double>(
+      0,
+      (sum, record) => sum + record.item.total,
+    );
+
+    final topPurchase = _largestGroup(
+      _buildGroupedResults(
+        records: records,
+        keyBuilder: (record) => record.purchaseId,
+        titleBuilder: (record) => record.purchaseName,
+        subtitleBuilder: (record) {
+          return '${record.market} • ${_reportDateFormatter.format(record.purchaseDate)}';
+        },
+      ),
+    );
+
+    final topMarket = _largestGroup(
+      _buildGroupedResults(
+        records: records,
+        keyBuilder: (record) => record.market.trim().toLowerCase(),
+        titleBuilder: (record) => record.market,
+        subtitleBuilder: (record) => 'Mercado',
+      ),
+    );
+
+    final topCategory = _largestGroup(
+      _buildGroupedResults(
+        records: records,
+        keyBuilder: (record) => record.item.categoryId,
+        titleBuilder: (record) => record.item.categoryName,
+        subtitleBuilder: (record) => 'Categoria',
+      ),
+    );
+
+    final topProductByTotal = _largestGroup(
+      _buildGroupedResults(
+        records: records,
+        keyBuilder: (record) => record.item.productId,
+        titleBuilder: (record) => record.item.productName,
+        subtitleBuilder: (record) {
+          return '${record.item.productBrand} • ${record.item.categoryName}';
+        },
+      ),
+    );
+
+    final mostExpensiveRecord = records.reduce((current, next) {
+      if (next.item.unitPrice > current.item.unitPrice) {
+        return next;
+      }
+
+      return current;
+    });
+
+    final mostPurchasedProduct = _buildMostPurchasedProduct(records);
+
+    final summary = _buildInsightSummary(
+      total: total,
+      records: records,
+      topCategory: topCategory,
+      topMarket: topMarket,
+    );
+
+    return _ReportInsights(
+      total: total,
+      summary: summary,
+      topPurchase: topPurchase,
+      topMarket: topMarket,
+      topCategory: topCategory,
+      topProductByTotal: topProductByTotal,
+      mostExpensiveRecord: mostExpensiveRecord,
+      mostPurchasedProduct: mostPurchasedProduct,
+    );
+  }
+
   List<_ReportGroupResult> _buildGroups(List<_ReportRecord> records) {
     final groups = <String, _ReportGroupAccumulator>{};
 
@@ -256,6 +338,11 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
           subtitle =
               '${record.item.productBrand} • ${record.item.categoryName}';
           break;
+        case _ReportGroupType.markets:
+          key = record.market.trim().toLowerCase();
+          title = record.market;
+          subtitle = 'Mercado';
+          break;
       }
 
       final accumulator = groups.putIfAbsent(
@@ -273,6 +360,113 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
     });
 
     return result;
+  }
+
+  List<_ReportGroupResult> _buildGroupedResults({
+    required List<_ReportRecord> records,
+    required String Function(_ReportRecord record) keyBuilder,
+    required String Function(_ReportRecord record) titleBuilder,
+    required String Function(_ReportRecord record) subtitleBuilder,
+  }) {
+    final groups = <String, _ReportGroupAccumulator>{};
+
+    for (final record in records) {
+      final key = keyBuilder(record);
+
+      final accumulator = groups.putIfAbsent(
+        key,
+        () => _ReportGroupAccumulator(
+          title: titleBuilder(record),
+          subtitle: subtitleBuilder(record),
+        ),
+      );
+
+      accumulator.add(record);
+    }
+
+    final result = groups.values.map((group) => group.toResult()).toList();
+
+    result.sort((first, second) {
+      return second.total.compareTo(first.total);
+    });
+
+    return result;
+  }
+
+  _ReportGroupResult? _largestGroup(List<_ReportGroupResult> groups) {
+    if (groups.isEmpty) {
+      return null;
+    }
+
+    final sortedGroups = [...groups]
+      ..sort((first, second) {
+        return second.total.compareTo(first.total);
+      });
+
+    return sortedGroups.first;
+  }
+
+  _ProductQuantityResult? _buildMostPurchasedProduct(
+    List<_ReportRecord> records,
+  ) {
+    final products = <String, _ProductQuantityAccumulator>{};
+
+    for (final record in records) {
+      final accumulator = products.putIfAbsent(
+        record.item.productId,
+        () => _ProductQuantityAccumulator(
+          title: record.item.productName,
+          subtitle: '${record.item.productBrand} • ${record.item.categoryName}',
+          unit: record.item.unit,
+        ),
+      );
+
+      accumulator.add(record);
+    }
+
+    if (products.isEmpty) {
+      return null;
+    }
+
+    final result = products.values
+        .map((product) => product.toResult())
+        .toList();
+
+    result.sort((first, second) {
+      final quantityComparison = second.quantity.compareTo(first.quantity);
+
+      if (quantityComparison != 0) {
+        return quantityComparison;
+      }
+
+      return second.total.compareTo(first.total);
+    });
+
+    return result.first;
+  }
+
+  String _buildInsightSummary({
+    required double total,
+    required List<_ReportRecord> records,
+    required _ReportGroupResult? topCategory,
+    required _ReportGroupResult? topMarket,
+  }) {
+    final itemsText = records.length == 1 ? 'item' : 'itens';
+    final purchasesCount = records
+        .map((record) => record.purchaseId)
+        .toSet()
+        .length;
+    final purchasesText = purchasesCount == 1 ? 'compra' : 'compras';
+
+    final categoryText = topCategory == null
+        ? ''
+        : ' A categoria com maior gasto foi ${topCategory.title}.';
+
+    final marketText = topMarket == null
+        ? ''
+        : ' O mercado com maior total foi ${topMarket.title}.';
+
+    return 'No filtro atual, você gastou ${_reportCurrencyFormatter.format(total)} em ${records.length} $itemsText, distribuídos em $purchasesCount $purchasesText.$categoryText$marketText';
   }
 
   String _periodKey(DateTime date) {
@@ -545,6 +739,252 @@ class _ReportDropdownFilter extends StatelessWidget {
   }
 }
 
+class _InsightsPanel extends StatelessWidget {
+  final _ReportInsights insights;
+
+  const _InsightsPanel({required this.insights});
+
+  @override
+  Widget build(BuildContext context) {
+    return _ReportSection(
+      title: 'Resumo inteligente',
+      child: Column(
+        children: [
+          _InsightSummaryCard(summary: insights.summary),
+          const SizedBox(height: 12),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final cardWidth = (constraints.maxWidth - 12) / 2;
+
+              return Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  if (insights.topPurchase != null)
+                    SizedBox(
+                      width: cardWidth,
+                      child: _InsightCard(
+                        icon: Icons.receipt_long_outlined,
+                        label: 'Maior compra',
+                        title: insights.topPurchase!.title,
+                        value: _reportCurrencyFormatter.format(
+                          insights.topPurchase!.total,
+                        ),
+                        subtitle: insights.topPurchase!.subtitle,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  if (insights.topMarket != null)
+                    SizedBox(
+                      width: cardWidth,
+                      child: _InsightCard(
+                        icon: Icons.storefront_outlined,
+                        label: 'Mercado destaque',
+                        title: insights.topMarket!.title,
+                        value: _reportCurrencyFormatter.format(
+                          insights.topMarket!.total,
+                        ),
+                        subtitle: 'Maior gasto por mercado',
+                        color: AppColors.success,
+                      ),
+                    ),
+                  if (insights.topCategory != null)
+                    SizedBox(
+                      width: cardWidth,
+                      child: _InsightCard(
+                        icon: Icons.category_outlined,
+                        label: 'Categoria destaque',
+                        title: insights.topCategory!.title,
+                        value: _reportCurrencyFormatter.format(
+                          insights.topCategory!.total,
+                        ),
+                        subtitle: 'Maior gasto por categoria',
+                        color: AppColors.warning,
+                      ),
+                    ),
+                  if (insights.topProductByTotal != null)
+                    SizedBox(
+                      width: cardWidth,
+                      child: _InsightCard(
+                        icon: Icons.shopping_basket_outlined,
+                        label: 'Produto com maior gasto',
+                        title: insights.topProductByTotal!.title,
+                        value: _reportCurrencyFormatter.format(
+                          insights.topProductByTotal!.total,
+                        ),
+                        subtitle: insights.topProductByTotal!.subtitle,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  if (insights.mostExpensiveRecord != null)
+                    SizedBox(
+                      width: cardWidth,
+                      child: _InsightCard(
+                        icon: Icons.sell_outlined,
+                        label: 'Produto mais caro',
+                        title: insights.mostExpensiveRecord!.productLabel,
+                        value: _reportCurrencyFormatter.format(
+                          insights.mostExpensiveRecord!.item.unitPrice,
+                        ),
+                        subtitle:
+                            'Preço unitário • ${insights.mostExpensiveRecord!.purchaseName}',
+                        color: AppColors.danger,
+                      ),
+                    ),
+                  if (insights.mostPurchasedProduct != null)
+                    SizedBox(
+                      width: cardWidth,
+                      child: _InsightCard(
+                        icon: Icons.trending_up_rounded,
+                        label: 'Mais comprado',
+                        title: insights.mostPurchasedProduct!.title,
+                        value: insights.mostPurchasedProduct!.quantityLabel,
+                        subtitle: _reportCurrencyFormatter.format(
+                          insights.mostPurchasedProduct!.total,
+                        ),
+                        color: AppColors.success,
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InsightSummaryCard extends StatelessWidget {
+  final String summary;
+
+  const _InsightSummaryCard({required this.summary});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.13),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.auto_graph_rounded,
+              color: AppColors.primary,
+              size: 21,
+            ),
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Text(
+              summary,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 12,
+                height: 1.42,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InsightCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String title;
+  final String value;
+  final String subtitle;
+  final Color color;
+
+  const _InsightCard({
+    required this.icon,
+    required this.label,
+    required this.title,
+    required this.value,
+    required this.subtitle,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 132),
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 22),
+          const SizedBox(height: 10),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: color,
+              fontSize: 14,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 10.5,
+              height: 1.25,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _MetricsGrid extends StatelessWidget {
   final List<_ReportRecord> records;
 
@@ -561,6 +1001,8 @@ class _MetricsGrid extends StatelessWidget {
         .map((record) => record.purchaseId)
         .toSet()
         .length;
+
+    final marketsCount = records.map((record) => record.market).toSet().length;
 
     final productsCount = records
         .map((record) => record.item.productId)
@@ -596,6 +1038,15 @@ class _MetricsGrid extends StatelessWidget {
                 label: 'Compras',
                 value: purchasesCount.toString(),
                 color: AppColors.success,
+              ),
+            ),
+            SizedBox(
+              width: cardWidth,
+              child: _MetricCard(
+                icon: Icons.storefront_outlined,
+                label: 'Mercados',
+                value: marketsCount.toString(),
+                color: AppColors.primary,
               ),
             ),
             SizedBox(
@@ -707,7 +1158,7 @@ class _GroupSelector extends StatelessWidget {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
+                      horizontal: 5,
                       vertical: 11,
                     ),
                     decoration: BoxDecoration(
@@ -725,7 +1176,7 @@ class _GroupSelector extends StatelessWidget {
                         color: isSelected
                             ? AppColors.primary
                             : AppColors.textSecondary,
-                        fontSize: 11,
+                        fontSize: 10.5,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -1077,6 +1528,41 @@ class _ReportRecord {
   }
 }
 
+class _ReportInsights {
+  final double total;
+  final String summary;
+  final _ReportGroupResult? topPurchase;
+  final _ReportGroupResult? topMarket;
+  final _ReportGroupResult? topCategory;
+  final _ReportGroupResult? topProductByTotal;
+  final _ReportRecord? mostExpensiveRecord;
+  final _ProductQuantityResult? mostPurchasedProduct;
+
+  const _ReportInsights({
+    required this.total,
+    required this.summary,
+    required this.topPurchase,
+    required this.topMarket,
+    required this.topCategory,
+    required this.topProductByTotal,
+    required this.mostExpensiveRecord,
+    required this.mostPurchasedProduct,
+  });
+
+  factory _ReportInsights.empty() {
+    return const _ReportInsights(
+      total: 0,
+      summary: '',
+      topPurchase: null,
+      topMarket: null,
+      topCategory: null,
+      topProductByTotal: null,
+      mostExpensiveRecord: null,
+      mostPurchasedProduct: null,
+    );
+  }
+}
+
 class _ReportGroupAccumulator {
   final String title;
   final String subtitle;
@@ -1119,6 +1605,55 @@ class _ReportGroupResult {
   });
 }
 
+class _ProductQuantityAccumulator {
+  final String title;
+  final String subtitle;
+  final String unit;
+  double quantity = 0;
+  double total = 0;
+
+  _ProductQuantityAccumulator({
+    required this.title,
+    required this.subtitle,
+    required this.unit,
+  });
+
+  void add(_ReportRecord record) {
+    quantity += record.item.quantity;
+    total += record.item.total;
+  }
+
+  _ProductQuantityResult toResult() {
+    return _ProductQuantityResult(
+      title: title,
+      subtitle: subtitle,
+      unit: unit,
+      quantity: quantity,
+      total: total,
+    );
+  }
+}
+
+class _ProductQuantityResult {
+  final String title;
+  final String subtitle;
+  final String unit;
+  final double quantity;
+  final double total;
+
+  const _ProductQuantityResult({
+    required this.title,
+    required this.subtitle,
+    required this.unit,
+    required this.quantity,
+    required this.total,
+  });
+
+  String get quantityLabel {
+    return '${_formatQuantity(quantity)} $unit';
+  }
+}
+
 class _FilterOption {
   final String value;
   final String label;
@@ -1126,7 +1661,7 @@ class _FilterOption {
   const _FilterOption({required this.value, required this.label});
 }
 
-enum _ReportGroupType { purchases, categories, products }
+enum _ReportGroupType { purchases, categories, products, markets }
 
 extension _ReportGroupTypeExtension on _ReportGroupType {
   String get label {
@@ -1137,6 +1672,8 @@ extension _ReportGroupTypeExtension on _ReportGroupType {
         return 'Categorias';
       case _ReportGroupType.products:
         return 'Produtos';
+      case _ReportGroupType.markets:
+        return 'Mercados';
     }
   }
 
@@ -1148,6 +1685,8 @@ extension _ReportGroupTypeExtension on _ReportGroupType {
         return 'Total por categoria';
       case _ReportGroupType.products:
         return 'Total por produto';
+      case _ReportGroupType.markets:
+        return 'Total por mercado';
     }
   }
 }
