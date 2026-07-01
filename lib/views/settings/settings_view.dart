@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../services/local_storage_service.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/products_viewmodel.dart';
 import '../../viewmodels/purchases_viewmodel.dart';
@@ -19,13 +20,18 @@ class _SettingsTexts {
       'Acompanhe os dados cadastrados e gerencie suas informações.';
 
   static const accountDataSection = 'Dados da conta';
+
   static const restoreCategoriesTitle = 'Restaurar categorias padrão';
   static const restoreCategoriesSubtitle =
       'Reativa e recria as categorias principais do app sem apagar produtos ou compras.';
 
-  static const clearAllDataTitle = 'Limpar todos os dados';
+  static const clearDeviceDataTitle = 'Limpar dados deste dispositivo';
+  static const clearDeviceDataSubtitle =
+      'Remove os dados deste aparelho e encerra a sessão. Os dados da conta continuam preservados.';
+
+  static const clearAllDataTitle = 'Apagar dados da conta';
   static const clearAllDataSubtitle =
-      'Apaga produtos, compras, itens e relatórios desta conta.';
+      'Apaga produtos, compras, itens e relatórios desta conta e sincroniza a exclusão.';
 
   static const accountSection = 'Conta';
   static const logoutTitle = 'Sair da conta';
@@ -45,6 +51,7 @@ class _SettingsTexts {
   static const versionValue = '1.0.0';
 
   static const restoreSuccess = 'Categorias padrão restauradas com sucesso.';
+
   static const clearAllSuccess =
       'Todos os dados desta conta foram apagados com sucesso.';
 
@@ -55,10 +62,15 @@ class _SettingsTexts {
       'Essa ação recriará e reativará as categorias padrão do app, sem apagar produtos ou compras já cadastrados.';
   static const restoreDialogConfirm = 'Restaurar';
 
-  static const clearDialogTitle = 'Limpar todos os dados?';
+  static const clearDeviceDialogTitle = 'Limpar dados deste dispositivo?';
+  static const clearDeviceDialogMessage =
+      'Essa ação remove apenas os dados deste aparelho e encerra a sessão atual. Os dados da sua conta continuam preservados e serão baixados novamente no próximo login online.';
+  static const clearDeviceDialogConfirm = 'Limpar e sair';
+
+  static const clearDialogTitle = 'Apagar dados da conta?';
   static const clearDialogMessage =
-      'Essa ação apagará produtos, compras, itens e relatórios desta conta. Essa ação não pode ser desfeita.';
-  static const clearDialogConfirm = 'Limpar dados';
+      'Essa ação apagará produtos, compras, itens e relatórios desta conta e sincronizará a exclusão com a nuvem. Essa ação não pode ser desfeita.';
+  static const clearDialogConfirm = 'Apagar conta';
 
   static const logoutDialogTitle = 'Sair da conta?';
   static const logoutDialogMessage =
@@ -154,6 +166,21 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                             _openConfirmation(
                               _SettingsConfirmationAction
                                   .restoreDefaultCategories,
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        _SettingsActionCard(
+                          icon: Icons.cleaning_services_outlined,
+                          title: _SettingsTexts.clearDeviceDataTitle,
+                          subtitle: _SettingsTexts.clearDeviceDataSubtitle,
+                          foregroundColor: AppColors.primary,
+                          backgroundColor: AppColors.primary.withValues(
+                            alpha: 0.10,
+                          ),
+                          onTap: () {
+                            _openConfirmation(
+                              _SettingsConfirmationAction.clearDeviceData,
                             );
                           },
                         ),
@@ -277,6 +304,40 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
         });
 
         _showFeedback(message: _SettingsTexts.restoreSuccess, isError: false);
+        break;
+
+      case _SettingsConfirmationAction.clearDeviceData:
+        final currentUser = ref.read(authProvider).currentUser;
+
+        if (currentUser == null) {
+          if (!mounted) {
+            return;
+          }
+
+          setState(() {
+            _confirmationAction = null;
+            _isConfirmingAction = false;
+          });
+
+          _showFeedback(
+            message: 'Não foi possível identificar a conta atual.',
+            isError: true,
+          );
+          break;
+        }
+
+        await LocalStorageService.clearUserLocalData(userId: currentUser.id);
+        await ref.read(authProvider.notifier).logout();
+
+        if (!mounted) {
+          return;
+        }
+
+        setState(() {
+          _confirmationAction = null;
+          _isConfirmingAction = false;
+        });
+
         break;
 
       case _SettingsConfirmationAction.clearAllData:
@@ -782,10 +843,14 @@ class _SettingsConfirmationOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isClearDeviceData =
+        action == _SettingsConfirmationAction.clearDeviceData;
     final isClearAllData = action == _SettingsConfirmationAction.clearAllData;
     final isLogout = action == _SettingsConfirmationAction.logout;
 
     final title = switch (action) {
+      _SettingsConfirmationAction.clearDeviceData =>
+        _SettingsTexts.clearDeviceDialogTitle,
       _SettingsConfirmationAction.clearAllData =>
         _SettingsTexts.clearDialogTitle,
       _SettingsConfirmationAction.restoreDefaultCategories =>
@@ -794,6 +859,8 @@ class _SettingsConfirmationOverlay extends StatelessWidget {
     };
 
     final message = switch (action) {
+      _SettingsConfirmationAction.clearDeviceData =>
+        _SettingsTexts.clearDeviceDialogMessage,
       _SettingsConfirmationAction.clearAllData =>
         _SettingsTexts.clearDialogMessage,
       _SettingsConfirmationAction.restoreDefaultCategories =>
@@ -802,6 +869,8 @@ class _SettingsConfirmationOverlay extends StatelessWidget {
     };
 
     final confirmLabel = switch (action) {
+      _SettingsConfirmationAction.clearDeviceData =>
+        _SettingsTexts.clearDeviceDialogConfirm,
       _SettingsConfirmationAction.clearAllData =>
         _SettingsTexts.clearDialogConfirm,
       _SettingsConfirmationAction.restoreDefaultCategories =>
@@ -852,6 +921,8 @@ class _SettingsConfirmationOverlay extends StatelessWidget {
                             ? Icons.logout_rounded
                             : isClearAllData
                             ? Icons.delete_forever_outlined
+                            : isClearDeviceData
+                            ? Icons.cleaning_services_outlined
                             : Icons.restart_alt_rounded,
                         color: color,
                         size: 30,
@@ -926,6 +997,7 @@ class _SettingsConfirmationOverlay extends StatelessWidget {
 }
 
 enum _SettingsConfirmationAction {
+  clearDeviceData,
   clearAllData,
   restoreDefaultCategories,
   logout,

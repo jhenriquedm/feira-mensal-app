@@ -143,6 +143,22 @@ class LocalStorageService {
     }
   }
 
+  static Future<void> clearUserLocalData({required String userId}) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      await prefs.remove(
+        _userScopedKey(baseKey: _categoriesKey, userId: userId),
+      );
+      await prefs.remove(_userScopedKey(baseKey: _productsKey, userId: userId));
+      await prefs.remove(
+        _userScopedKey(baseKey: _purchasesKey, userId: userId),
+      );
+    } catch (_) {
+      // Evita quebrar testes ou execução caso o storage falhe.
+    }
+  }
+
   static Future<List<AppUserModel>> loadUsers() async {
     try {
       final prefs = await SharedPreferences.getInstance();

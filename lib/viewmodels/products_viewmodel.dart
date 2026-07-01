@@ -477,43 +477,208 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
     }
 
     if (savedData == null) {
-      _emitState(
-        ProductsState(
-          categories: _preparedDefaultCategories(),
-          products: const [],
-        ),
+      state = const ProductsState(categories: [], products: []);
+    } else {
+      _applyProductsData(
+        categories: savedData.categories,
+        products: savedData.products,
+        saveAfterApply: false,
       );
+    }
+
+    await _downloadProductsDataFromFirestore();
+
+    if (!mounted) {
       return;
     }
 
-    final visibleCategories = savedData.categories
+    if (state.categories.isEmpty && state.deletedCategories.isEmpty) {
+      state = ProductsState(
+        categories: List.unmodifiable(_preparedDefaultCategories()),
+        products: state.products,
+        deletedProducts: state.deletedProducts,
+      );
+
+      _saveLocalData();
+    }
+
+    _trySyncProductsData();
+  }
+
+  Future<void> _downloadProductsDataFromFirestore() async {
+    if (userId.trim().isEmpty || userId == 'no_user') {
+      return;
+    }
+
+    try {
+      final remoteData = await FirestoreSyncService.downloadProductsDataForUser(
+        userId: userId,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (remoteData.categories.isEmpty && remoteData.products.isEmpty) {
+        return;
+      }
+
+      final mergedCategories = _mergeCategories(
+        local: state.allCategoriesForStorage,
+        remote: remoteData.categories,
+      );
+
+      final mergedProducts = _mergeProducts(
+        local: state.allProductsForStorage,
+        remote: remoteData.products,
+      );
+
+      _applyProductsData(
+        categories: mergedCategories,
+        products: mergedProducts,
+      );
+    } catch (_) {
+      // Se estiver offline, mantém apenas os dados locais.
+    }
+  }
+
+  void _applyProductsData({
+    required List<CategoryModel> categories,
+    required List<ProductModel> products,
+    bool saveAfterApply = true,
+  }) {
+    if (!mounted) {
+      return;
+    }
+
+    final visibleCategories = categories
         .where((category) => !category.isDeleted)
         .toList();
 
-    final deletedCategories = savedData.categories
+    final deletedCategories = categories
         .where((category) => category.isDeleted)
         .toList();
 
-    final visibleProducts = savedData.products
+    final visibleProducts = products
         .where((product) => !product.isDeleted)
         .toList();
 
-    final deletedProducts = savedData.products
+    final deletedProducts = products
         .where((product) => product.isDeleted)
         .toList();
 
-    final categories = visibleCategories.isEmpty
-        ? _preparedDefaultCategories()
-        : visibleCategories;
-
     state = ProductsState(
-      categories: List.unmodifiable(categories),
+      categories: List.unmodifiable(visibleCategories),
       products: List.unmodifiable(visibleProducts),
       deletedCategories: List.unmodifiable(deletedCategories),
       deletedProducts: List.unmodifiable(deletedProducts),
     );
 
-    _trySyncProductsData();
+    if (saveAfterApply) {
+      _saveLocalData();
+    }
+  }
+
+  List<CategoryModel> _mergeCategories({
+    required List<CategoryModel> local,
+    required List<CategoryModel> remote,
+  }) {
+    final merged = <String, CategoryModel>{};
+
+    for (final category in local) {
+      merged[category.id] = category;
+    }
+
+    for (final remoteCategory in remote) {
+      final localCategory = merged[remoteCategory.id];
+
+      if (localCategory == null) {
+        merged[remoteCategory.id] = remoteCategory;
+        continue;
+      }
+
+      merged[remoteCategory.id] = _chooseCategoryVersion(
+        local: localCategory,
+        remote: remoteCategory,
+      );
+    }
+
+    return merged.values.toList();
+  }
+
+  List<ProductModel> _mergeProducts({
+    required List<ProductModel> local,
+    required List<ProductModel> remote,
+  }) {
+    final merged = <String, ProductModel>{};
+
+    for (final product in local) {
+      merged[product.id] = product;
+    }
+
+    for (final remoteProduct in remote) {
+      final localProduct = merged[remoteProduct.id];
+
+      if (localProduct == null) {
+        merged[remoteProduct.id] = remoteProduct;
+        continue;
+      }
+
+      merged[remoteProduct.id] = _chooseProductVersion(
+        local: localProduct,
+        remote: remoteProduct,
+      );
+    }
+
+    return merged.values.toList();
+  }
+
+  CategoryModel _chooseCategoryVersion({
+    required CategoryModel local,
+    required CategoryModel remote,
+  }) {
+    if (local.syncStatus.hasPendingChanges) {
+      return local;
+    }
+
+    final localDate = _categoryUpdatedAt(local);
+    final remoteDate = _categoryUpdatedAt(remote);
+
+    if (remoteDate.isAfter(localDate)) {
+      return remote;
+    }
+
+    return local;
+  }
+
+  ProductModel _chooseProductVersion({
+    required ProductModel local,
+    required ProductModel remote,
+  }) {
+    if (local.syncStatus.hasPendingChanges) {
+      return local;
+    }
+
+    final localDate = _productUpdatedAt(local);
+    final remoteDate = _productUpdatedAt(remote);
+
+    if (remoteDate.isAfter(localDate)) {
+      return remote;
+    }
+
+    return local;
+  }
+
+  DateTime _categoryUpdatedAt(CategoryModel category) {
+    return category.updatedAt ??
+        category.createdAt ??
+        DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  DateTime _productUpdatedAt(ProductModel product) {
+    return product.updatedAt ??
+        product.createdAt ??
+        DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   void _emitState(ProductsState nextState) {

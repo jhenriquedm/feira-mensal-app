@@ -30,7 +30,6 @@ final productIdsLinkedToPurchasesProvider = Provider<Set<String>>((ref) {
 
 class PurchasesState {
   final List<PurchaseModel> purchases;
-
   final List<PurchaseModel> deletedPurchases;
 
   const PurchasesState({
@@ -384,24 +383,130 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
       userId: userId,
     );
 
-    if (!mounted || savedPurchases == null) {
+    if (!mounted) {
       return;
     }
 
-    final visiblePurchases = savedPurchases
+    if (savedPurchases == null) {
+      state = const PurchasesState(purchases: []);
+    } else {
+      _applyPurchasesData(purchases: savedPurchases, saveAfterApply: false);
+    }
+
+    await _downloadPurchasesFromFirestore();
+
+    if (!mounted) {
+      return;
+    }
+
+    _saveLocalData();
+    _trySyncPurchases();
+  }
+
+  Future<void> _downloadPurchasesFromFirestore() async {
+    if (userId.trim().isEmpty || userId == 'no_user') {
+      return;
+    }
+
+    try {
+      final remoteData = await FirestoreSyncService.downloadPurchasesForUser(
+        userId: userId,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (remoteData.purchases.isEmpty) {
+        return;
+      }
+
+      final mergedPurchases = _mergePurchases(
+        local: state.allPurchasesForStorage,
+        remote: remoteData.purchases,
+      );
+
+      _applyPurchasesData(purchases: mergedPurchases);
+    } catch (_) {
+      // Se estiver offline, mantém apenas os dados locais.
+    }
+  }
+
+  void _applyPurchasesData({
+    required List<PurchaseModel> purchases,
+    bool saveAfterApply = true,
+  }) {
+    if (!mounted) {
+      return;
+    }
+
+    final visiblePurchases = purchases
         .where((purchase) => !purchase.isDeleted)
         .toList();
 
-    final deletedPurchases = savedPurchases
+    final deletedPurchases = purchases
         .where((purchase) => purchase.isDeleted)
         .toList();
 
-    state = state.copyWith(
+    state = PurchasesState(
       purchases: List.unmodifiable(visiblePurchases),
       deletedPurchases: List.unmodifiable(deletedPurchases),
     );
 
-    _trySyncPurchases();
+    if (saveAfterApply) {
+      _saveLocalData();
+    }
+  }
+
+  List<PurchaseModel> _mergePurchases({
+    required List<PurchaseModel> local,
+    required List<PurchaseModel> remote,
+  }) {
+    final merged = <String, PurchaseModel>{};
+
+    for (final purchase in local) {
+      merged[purchase.id] = purchase;
+    }
+
+    for (final remotePurchase in remote) {
+      final localPurchase = merged[remotePurchase.id];
+
+      if (localPurchase == null) {
+        merged[remotePurchase.id] = remotePurchase;
+        continue;
+      }
+
+      merged[remotePurchase.id] = _choosePurchaseVersion(
+        local: localPurchase,
+        remote: remotePurchase,
+      );
+    }
+
+    return merged.values.toList();
+  }
+
+  PurchaseModel _choosePurchaseVersion({
+    required PurchaseModel local,
+    required PurchaseModel remote,
+  }) {
+    if (local.syncStatus.hasPendingChanges) {
+      return local;
+    }
+
+    final localDate = _purchaseUpdatedAt(local);
+    final remoteDate = _purchaseUpdatedAt(remote);
+
+    if (remoteDate.isAfter(localDate)) {
+      return remote;
+    }
+
+    return local;
+  }
+
+  DateTime _purchaseUpdatedAt(PurchaseModel purchase) {
+    return purchase.updatedAt ??
+        purchase.createdAt ??
+        DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   void _updatePurchaseStatus({

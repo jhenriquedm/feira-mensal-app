@@ -39,12 +39,16 @@ class FirestoreSyncService {
     return _firestore.collection('users').doc(userId).collection('purchases');
   }
 
+  static bool _isInvalidUser(String userId) {
+    return userId.trim().isEmpty || userId == 'no_user';
+  }
+
   static Future<ProductsSyncResult> syncProductsDataForUser({
     required String userId,
     required List<CategoryModel> categories,
     required List<ProductModel> products,
   }) async {
-    if (userId.trim().isEmpty || userId == 'no_user') {
+    if (_isInvalidUser(userId)) {
       return ProductsSyncResult(categories: categories, products: products);
     }
 
@@ -57,9 +61,7 @@ class FirestoreSyncService {
         category: category,
       );
 
-      if (syncedCategory != null) {
-        syncedCategories.add(syncedCategory);
-      }
+      syncedCategories.add(syncedCategory);
     }
 
     for (final product in products) {
@@ -68,9 +70,7 @@ class FirestoreSyncService {
         product: product,
       );
 
-      if (syncedProduct != null) {
-        syncedProducts.add(syncedProduct);
-      }
+      syncedProducts.add(syncedProduct);
     }
 
     return ProductsSyncResult(
@@ -83,7 +83,7 @@ class FirestoreSyncService {
     required String userId,
     required List<PurchaseModel> purchases,
   }) async {
-    if (userId.trim().isEmpty || userId == 'no_user') {
+    if (_isInvalidUser(userId)) {
       return PurchasesSyncResult(purchases: purchases);
     }
 
@@ -95,107 +95,191 @@ class FirestoreSyncService {
         purchase: purchase,
       );
 
-      if (syncedPurchase != null) {
-        syncedPurchases.add(syncedPurchase);
-      }
+      syncedPurchases.add(syncedPurchase);
     }
 
     return PurchasesSyncResult(purchases: syncedPurchases);
   }
 
-  static Future<CategoryModel?> _syncCategory({
+  static Future<ProductsSyncResult> downloadProductsDataForUser({
+    required String userId,
+  }) async {
+    if (_isInvalidUser(userId)) {
+      return const ProductsSyncResult(categories: [], products: []);
+    }
+
+    final categoriesSnapshot = await _userCategoriesRef(userId).get();
+    final productsSnapshot = await _userProductsRef(userId).get();
+
+    final categories = categoriesSnapshot.docs.map((document) {
+      final data = _documentDataWithId(document);
+
+      return _normalizeDownloadedCategory(CategoryModel.fromMap(data));
+    }).toList();
+
+    final products = productsSnapshot.docs.map((document) {
+      final data = _documentDataWithId(document);
+
+      return _normalizeDownloadedProduct(ProductModel.fromMap(data));
+    }).toList();
+
+    return ProductsSyncResult(categories: categories, products: products);
+  }
+
+  static Future<PurchasesSyncResult> downloadPurchasesForUser({
+    required String userId,
+  }) async {
+    if (_isInvalidUser(userId)) {
+      return const PurchasesSyncResult(purchases: []);
+    }
+
+    final purchasesSnapshot = await _userPurchasesRef(userId).get();
+
+    final purchases = purchasesSnapshot.docs.map((document) {
+      final data = _documentDataWithId(document);
+
+      return _normalizeDownloadedPurchase(PurchaseModel.fromMap(data));
+    }).toList();
+
+    return PurchasesSyncResult(purchases: purchases);
+  }
+
+  static Future<CategoryModel> _syncCategory({
     required String userId,
     required CategoryModel category,
   }) async {
     final document = _userCategoriesRef(userId).doc(category.id);
 
-    if (category.syncStatus == SyncStatus.synced && !category.isDeleted) {
+    if (category.syncStatus == SyncStatus.synced) {
       return category;
-    }
-
-    if (category.syncStatus == SyncStatus.pendingDelete || category.isDeleted) {
-      await document.delete();
-      return null;
     }
 
     final now = DateTime.now();
 
-    final data = category
-        .copyWith(
-          createdAt: category.createdAt ?? now,
-          updatedAt: category.updatedAt ?? now,
-          lastSyncedAt: now,
-          syncStatus: SyncStatus.synced,
-          isDeleted: false,
-        )
-        .toMap();
+    if (category.syncStatus == SyncStatus.pendingDelete || category.isDeleted) {
+      final deletedCategory = category.copyWith(
+        createdAt: category.createdAt ?? now,
+        updatedAt: category.updatedAt ?? now,
+        lastSyncedAt: now,
+        syncStatus: SyncStatus.synced,
+        isDeleted: true,
+      );
 
-    await document.set(data, SetOptions(merge: true));
+      await document.set(deletedCategory.toMap(), SetOptions(merge: true));
 
-    return CategoryModel.fromMap(data);
+      return deletedCategory;
+    }
+
+    final syncedCategory = category.copyWith(
+      createdAt: category.createdAt ?? now,
+      updatedAt: category.updatedAt ?? now,
+      lastSyncedAt: now,
+      syncStatus: SyncStatus.synced,
+      isDeleted: false,
+    );
+
+    await document.set(syncedCategory.toMap(), SetOptions(merge: true));
+
+    return syncedCategory;
   }
 
-  static Future<ProductModel?> _syncProduct({
+  static Future<ProductModel> _syncProduct({
     required String userId,
     required ProductModel product,
   }) async {
     final document = _userProductsRef(userId).doc(product.id);
 
-    if (product.syncStatus == SyncStatus.synced && !product.isDeleted) {
+    if (product.syncStatus == SyncStatus.synced) {
       return product;
-    }
-
-    if (product.syncStatus == SyncStatus.pendingDelete || product.isDeleted) {
-      await document.delete();
-      return null;
     }
 
     final now = DateTime.now();
 
-    final data = product
-        .copyWith(
-          createdAt: product.createdAt ?? now,
-          updatedAt: product.updatedAt ?? now,
-          lastSyncedAt: now,
-          syncStatus: SyncStatus.synced,
-          isDeleted: false,
-        )
-        .toMap();
+    if (product.syncStatus == SyncStatus.pendingDelete || product.isDeleted) {
+      final deletedProduct = product.copyWith(
+        createdAt: product.createdAt ?? now,
+        updatedAt: product.updatedAt ?? now,
+        lastSyncedAt: now,
+        syncStatus: SyncStatus.synced,
+        isDeleted: true,
+      );
 
-    await document.set(data, SetOptions(merge: true));
+      await document.set(deletedProduct.toMap(), SetOptions(merge: true));
 
-    return ProductModel.fromMap(data);
+      return deletedProduct;
+    }
+
+    final syncedProduct = product.copyWith(
+      createdAt: product.createdAt ?? now,
+      updatedAt: product.updatedAt ?? now,
+      lastSyncedAt: now,
+      syncStatus: SyncStatus.synced,
+      isDeleted: false,
+    );
+
+    await document.set(syncedProduct.toMap(), SetOptions(merge: true));
+
+    return syncedProduct;
   }
 
-  static Future<PurchaseModel?> _syncPurchase({
+  static Future<PurchaseModel> _syncPurchase({
     required String userId,
     required PurchaseModel purchase,
   }) async {
     final document = _userPurchasesRef(userId).doc(purchase.id);
 
-    if (purchase.syncStatus == SyncStatus.synced && !purchase.isDeleted) {
+    if (purchase.syncStatus == SyncStatus.synced) {
       return purchase;
-    }
-
-    if (purchase.syncStatus == SyncStatus.pendingDelete || purchase.isDeleted) {
-      await document.delete();
-      return null;
     }
 
     final now = DateTime.now();
 
-    final data = purchase
-        .copyWith(
-          createdAt: purchase.createdAt ?? now,
-          updatedAt: purchase.updatedAt ?? now,
-          lastSyncedAt: now,
-          syncStatus: SyncStatus.synced,
-          isDeleted: false,
-        )
-        .toMap();
+    if (purchase.syncStatus == SyncStatus.pendingDelete || purchase.isDeleted) {
+      final deletedPurchase = purchase.copyWith(
+        createdAt: purchase.createdAt ?? now,
+        updatedAt: purchase.updatedAt ?? now,
+        lastSyncedAt: now,
+        syncStatus: SyncStatus.synced,
+        isDeleted: true,
+      );
 
-    await document.set(data, SetOptions(merge: true));
+      await document.set(deletedPurchase.toMap(), SetOptions(merge: true));
 
-    return PurchaseModel.fromMap(data);
+      return deletedPurchase;
+    }
+
+    final syncedPurchase = purchase.copyWith(
+      createdAt: purchase.createdAt ?? now,
+      updatedAt: purchase.updatedAt ?? now,
+      lastSyncedAt: now,
+      syncStatus: SyncStatus.synced,
+      isDeleted: false,
+    );
+
+    await document.set(syncedPurchase.toMap(), SetOptions(merge: true));
+
+    return syncedPurchase;
+  }
+
+  static CategoryModel _normalizeDownloadedCategory(CategoryModel category) {
+    return category.copyWith(syncStatus: SyncStatus.synced);
+  }
+
+  static ProductModel _normalizeDownloadedProduct(ProductModel product) {
+    return product.copyWith(syncStatus: SyncStatus.synced);
+  }
+
+  static PurchaseModel _normalizeDownloadedPurchase(PurchaseModel purchase) {
+    return purchase.copyWith(syncStatus: SyncStatus.synced);
+  }
+
+  static Map<String, dynamic> _documentDataWithId(
+    QueryDocumentSnapshot<Map<String, dynamic>> document,
+  ) {
+    final data = Map<String, dynamic>.from(document.data());
+
+    data['id'] = data['id'] as String? ?? document.id;
+
+    return data;
   }
 }
