@@ -154,9 +154,11 @@ class _ProductsHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(bottom: BorderSide(color: AppColors.border)),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceColor(context),
+        border: Border(
+          bottom: BorderSide(color: AppColors.borderColor(context)),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,6 +168,7 @@ class _ProductsHeader extends StatelessWidget {
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
               fontSize: 26,
               fontWeight: FontWeight.w800,
+              color: AppColors.textPrimaryColor(context),
             ),
           ),
           const SizedBox(height: 5),
@@ -173,7 +176,9 @@ class _ProductsHeader extends StatelessWidget {
             'Cadastre produtos e organize suas categorias.',
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondaryColor(context),
+            ),
           ),
           const SizedBox(height: 14),
           Row(
@@ -226,8 +231,11 @@ class _ProductsHeaderChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
+        color: color.withValues(alpha: AppColors.isDark(context) ? 0.18 : 0.10),
         borderRadius: BorderRadius.circular(17),
+        border: Border.all(
+          color: color.withValues(alpha: AppColors.isDark(context) ? 0.22 : 0),
+        ),
       ),
       child: Row(
         children: [
@@ -281,8 +289,9 @@ class _ManualSegmentedTabs extends StatelessWidget {
       height: 46,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: AppColors.surfaceSoftColor(context),
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Row(
         children: [
@@ -317,7 +326,7 @@ class _ManualTabButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Material(
-        color: selected ? AppColors.surface : Colors.transparent,
+        color: selected ? AppColors.surfaceColor(context) : Colors.transparent,
         borderRadius: BorderRadius.circular(14),
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
@@ -326,7 +335,9 @@ class _ManualTabButton extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                color: selected ? AppColors.primary : AppColors.textSecondary,
+                color: selected
+                    ? AppColors.primary
+                    : AppColors.textSecondaryColor(context),
                 fontSize: 13,
                 fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
               ),
@@ -356,7 +367,7 @@ class _ProductsTab extends StatelessWidget {
     final products = viewModel.sortedProducts;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundColor(context),
       body: products.isEmpty
           ? const _EmptyState(
               icon: Icons.shopping_basket_outlined,
@@ -409,6 +420,8 @@ class _ProductsTab extends StatelessWidget {
             ),
       floatingActionButton: FloatingActionButton(
         tooltip: 'Adicionar produto',
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
         onPressed: () {
           _showProductDialog(context, state, viewModel, linkedProductIds);
         },
@@ -461,12 +474,22 @@ class _ProductsTab extends StatelessWidget {
               }
 
               return AlertDialog(
+                backgroundColor: AppColors.surfaceColor(context),
+                surfaceTintColor: Colors.transparent,
                 insetPadding: const EdgeInsets.symmetric(
                   horizontal: 28,
                   vertical: 24,
                 ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  side: BorderSide(color: AppColors.borderColor(context)),
+                ),
                 title: Text(
                   product == null ? 'Novo produto' : 'Editar produto',
+                  style: TextStyle(
+                    color: AppColors.textPrimaryColor(context),
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 content: SizedBox(
                   width: 300,
@@ -488,6 +511,7 @@ class _ProductsTab extends StatelessWidget {
                             const SizedBox(height: 12),
                           ],
                           _premiumTextField(
+                            context,
                             controller: nameController,
                             label: 'Nome do produto',
                             hint: 'Ex: Café',
@@ -497,6 +521,7 @@ class _ProductsTab extends StatelessWidget {
                           ),
                           const SizedBox(height: 12),
                           _premiumTextField(
+                            context,
                             controller: brandController,
                             label: 'Marca',
                             hint: 'Ex: Pilão',
@@ -509,9 +534,14 @@ class _ProductsTab extends StatelessWidget {
                             initialValue: selectedCategoryId,
                             isExpanded: true,
                             menuMaxHeight: 260,
-                            dropdownColor: AppColors.surface,
+                            dropdownColor: AppColors.surfaceColor(context),
                             borderRadius: BorderRadius.circular(18),
-                            decoration: _inputDecoration('Categoria'),
+                            style: TextStyle(
+                              color: AppColors.textPrimaryColor(context),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            decoration: _inputDecoration(context, 'Categoria'),
                             items: categories.map((category) {
                               return DropdownMenuItem<String>(
                                 value: category.id,
@@ -541,9 +571,17 @@ class _ProductsTab extends StatelessWidget {
                             initialValue: selectedUnit,
                             isExpanded: true,
                             menuMaxHeight: 260,
-                            dropdownColor: AppColors.surface,
+                            dropdownColor: AppColors.surfaceColor(context),
                             borderRadius: BorderRadius.circular(18),
-                            decoration: _inputDecoration('Unidade de medida'),
+                            style: TextStyle(
+                              color: AppColors.textPrimaryColor(context),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            decoration: _inputDecoration(
+                              context,
+                              'Unidade de medida',
+                            ),
                             items: units.map((unit) {
                               return DropdownMenuItem<String>(
                                 value: unit,
@@ -576,13 +614,19 @@ class _ProductsTab extends StatelessWidget {
                               alpha: 0.35,
                             ),
                             contentPadding: EdgeInsets.zero,
-                            title: const Text('Ativo/Inativo'),
+                            title: Text(
+                              'Ativo/Inativo',
+                              style: TextStyle(
+                                color: AppColors.textPrimaryColor(context),
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
                             subtitle: Text(
                               isActive
                                   ? 'Disponível para novas compras.'
                                   : 'Oculto para novas compras.',
-                              style: const TextStyle(
-                                color: AppColors.textSecondary,
+                              style: TextStyle(
+                                color: AppColors.textSecondaryColor(context),
                                 fontSize: 12,
                               ),
                             ),
@@ -773,18 +817,23 @@ class _ProductListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final productColor = product.isActive
+        ? AppColors.textPrimaryColor(context)
+        : AppColors.textSecondaryColor(context);
+
     return Card(
+      color: AppColors.surfaceColor(context),
       child: ListTile(
         contentPadding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
         leading: CircleAvatar(
           backgroundColor: product.isActive
-              ? AppColors.primary.withValues(alpha: 0.10)
-              : const Color(0xFFF3F4F6),
+              ? AppColors.primarySoftBackground(context)
+              : AppColors.surfaceSoftColor(context),
           child: Icon(
             Icons.shopping_basket_outlined,
             color: product.isActive
                 ? AppColors.primary
-                : AppColors.textSecondary,
+                : AppColors.textSecondaryColor(context),
           ),
         ),
         title: Row(
@@ -796,9 +845,7 @@ class _ProductListCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontWeight: FontWeight.w800,
-                  color: product.isActive
-                      ? AppColors.textPrimary
-                      : AppColors.textSecondary,
+                  color: productColor,
                 ),
               ),
             ),
@@ -811,14 +858,15 @@ class _ProductListCard extends StatelessWidget {
             '$categoryName • ${product.unit} • ${product.brand ?? 'Sem marca'}',
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              color: AppColors.textSecondaryColor(context),
               fontSize: 12,
               height: 1.3,
             ),
           ),
         ),
         trailing: PopupMenuButton<String>(
+          color: AppColors.surfaceColor(context),
           tooltip: 'Opções do produto',
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -833,8 +881,8 @@ class _ProductListCard extends StatelessWidget {
             }
           },
           itemBuilder: (context) {
-            return const [
-              PopupMenuItem(
+            return [
+              const PopupMenuItem(
                 value: 'edit',
                 child: Row(
                   children: [
@@ -848,7 +896,7 @@ class _ProductListCard extends StatelessWidget {
                   ],
                 ),
               ),
-              PopupMenuItem(
+              const PopupMenuItem(
                 value: 'delete',
                 child: Row(
                   children: [
@@ -878,7 +926,9 @@ class _LinkedBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.10),
+        color: AppColors.primary.withValues(
+          alpha: AppColors.isDark(context) ? 0.20 : 0.10,
+        ),
         borderRadius: BorderRadius.circular(30),
       ),
       child: const Text(
@@ -902,9 +952,15 @@ class _LinkedProductWarning extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.09),
+        color: AppColors.primary.withValues(
+          alpha: AppColors.isDark(context) ? 0.16 : 0.09,
+        ),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
+        border: Border.all(
+          color: AppColors.primary.withValues(
+            alpha: AppColors.isDark(context) ? 0.30 : 0.22,
+          ),
+        ),
       ),
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -944,7 +1000,7 @@ class _CategoriesTab extends StatelessWidget {
     final categories = viewModel.sortedCategories;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundColor(context),
       body: categories.isEmpty
           ? const _EmptyState(
               icon: Icons.category_outlined,
@@ -981,6 +1037,8 @@ class _CategoriesTab extends StatelessWidget {
             ),
       floatingActionButton: FloatingActionButton(
         tooltip: 'Adicionar categoria',
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
         onPressed: () {
           _showCategoryDialog(context, state, viewModel);
         },
@@ -1014,12 +1072,22 @@ class _CategoriesTab extends StatelessWidget {
               }
 
               return AlertDialog(
+                backgroundColor: AppColors.surfaceColor(context),
+                surfaceTintColor: Colors.transparent,
                 insetPadding: const EdgeInsets.symmetric(
                   horizontal: 28,
                   vertical: 24,
                 ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  side: BorderSide(color: AppColors.borderColor(context)),
+                ),
                 title: Text(
                   category == null ? 'Nova categoria' : 'Editar categoria',
+                  style: TextStyle(
+                    color: AppColors.textPrimaryColor(context),
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 content: SizedBox(
                   width: 300,
@@ -1037,6 +1105,7 @@ class _CategoriesTab extends StatelessWidget {
                             const SizedBox(height: 12),
                           ],
                           _premiumTextField(
+                            context,
                             controller: controller,
                             label: 'Nome da categoria',
                             hint: 'Ex: Hortifruti',
@@ -1051,13 +1120,19 @@ class _CategoriesTab extends StatelessWidget {
                               alpha: 0.35,
                             ),
                             contentPadding: EdgeInsets.zero,
-                            title: const Text('Ativo/Inativo'),
+                            title: Text(
+                              'Ativo/Inativo',
+                              style: TextStyle(
+                                color: AppColors.textPrimaryColor(context),
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
                             subtitle: Text(
                               isActive
                                   ? 'Disponível para novos produtos.'
                                   : 'Oculta para novos produtos.',
-                              style: const TextStyle(
-                                color: AppColors.textSecondary,
+                              style: TextStyle(
+                                color: AppColors.textSecondaryColor(context),
                                 fontSize: 12,
                               ),
                             ),
@@ -1233,16 +1308,23 @@ class _CategoryGridCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final categoryColor = category.isActive
+        ? AppColors.textPrimaryColor(context)
+        : AppColors.textSecondaryColor(context);
+
     return Card(
+      color: AppColors.surfaceColor(context),
       child: Stack(
         children: [
           Positioned(
             top: 6,
             left: 6,
             child: PopupMenuButton<String>(
+              color: AppColors.surfaceColor(context),
               tooltip: 'Opções da categoria',
               padding: EdgeInsets.zero,
               iconSize: 20,
+              iconColor: AppColors.textSecondaryColor(context),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -1296,16 +1378,26 @@ class _CategoryGridCard extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 22, 12, 12),
                 child: Opacity(
-                  opacity: category.isActive ? 1 : 0.45,
+                  opacity: category.isActive ? 1 : 0.55,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        Icons.category_outlined,
-                        color: category.isActive
-                            ? AppColors.primary
-                            : AppColors.textSecondary,
-                        size: 28,
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: category.isActive
+                              ? AppColors.primarySoftBackground(context)
+                              : AppColors.surfaceSoftColor(context),
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: Icon(
+                          Icons.category_outlined,
+                          color: category.isActive
+                              ? AppColors.primary
+                              : AppColors.textSecondaryColor(context),
+                          size: 25,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -1315,11 +1407,9 @@ class _CategoryGridCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(
-                              color: category.isActive
-                                  ? AppColors.textPrimary
-                                  : AppColors.textSecondary,
+                              color: categoryColor,
                               fontSize: 15,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w800,
                             ),
                       ),
                     ],
@@ -1439,7 +1529,8 @@ class _CategoryDialogResult {
 
 enum _CategoryDialogAction { create, update, delete }
 
-Widget _premiumTextField({
+Widget _premiumTextField(
+  BuildContext context, {
   required TextEditingController controller,
   required String label,
   required String hint,
@@ -1451,11 +1542,16 @@ Widget _premiumTextField({
     controller: controller,
     enabled: enabled,
     maxLength: maxLength,
+    style: TextStyle(
+      color: AppColors.textPrimaryColor(context),
+      fontWeight: FontWeight.w600,
+    ),
     inputFormatters: [
       FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZÀ-ÿ0-9 ]')),
       LengthLimitingTextInputFormatter(maxLength),
     ],
     decoration: _inputDecoration(
+      context,
       label,
     ).copyWith(hintText: hint, counterText: ''),
     validator: (value) {
@@ -1472,19 +1568,25 @@ Widget _premiumTextField({
   );
 }
 
-InputDecoration _inputDecoration(String label) {
+InputDecoration _inputDecoration(BuildContext context, String label) {
   return InputDecoration(
     labelText: label,
+    labelStyle: TextStyle(color: AppColors.textSecondaryColor(context)),
+    hintStyle: TextStyle(
+      color: AppColors.textSecondaryColor(context).withValues(alpha: 0.75),
+    ),
     filled: true,
-    fillColor: AppColors.background,
+    fillColor: AppColors.surfaceSoftColor(context),
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: const BorderSide(color: AppColors.border),
+      borderSide: BorderSide(color: AppColors.borderColor(context)),
     ),
     disabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: BorderSide(color: AppColors.border.withValues(alpha: 0.70)),
+      borderSide: BorderSide(
+        color: AppColors.borderColor(context).withValues(alpha: 0.70),
+      ),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
@@ -1520,7 +1622,9 @@ class _ProductsLocalFeedback extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.16),
+              color: Colors.black.withValues(
+                alpha: AppColors.isDark(context) ? 0.28 : 0.16,
+              ),
               blurRadius: 18,
               offset: const Offset(0, 8),
             ),
@@ -1558,9 +1662,13 @@ class _DialogFeedback extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
+        color: color.withValues(alpha: AppColors.isDark(context) ? 0.18 : 0.10),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.25)),
+        border: Border.all(
+          color: color.withValues(
+            alpha: AppColors.isDark(context) ? 0.34 : 0.25,
+          ),
+        ),
       ),
       child: Text(
         message,
@@ -1602,7 +1710,7 @@ class _EmptyState extends StatelessWidget {
               width: 82,
               height: 82,
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.10),
+                color: AppColors.primarySoftBackground(context),
                 borderRadius: BorderRadius.circular(26),
               ),
               child: Icon(icon, size: 40, color: AppColors.primary),
@@ -1611,15 +1719,19 @@ class _EmptyState extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: AppColors.textPrimaryColor(context),
+                fontWeight: FontWeight.w900,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(height: 1.45),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                height: 1.45,
+                color: AppColors.textSecondaryColor(context),
+              ),
             ),
           ],
         ),
