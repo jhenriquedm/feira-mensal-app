@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "817589523022",
+    "project_id": "feira-mensal-app",
+    "storage_bucket": "feira-mensal-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:817589523022:android:383df14d9d5fafea34291f",
+        "android_client_info": {
+          "package_name": "com.example.feira_mensal_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBIAbUrEWCnhS0mDllEEcWA1ALqIZoUbmI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
