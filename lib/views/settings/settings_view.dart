@@ -8,6 +8,7 @@ import '../../services/local_storage_service.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/products_viewmodel.dart';
 import '../../viewmodels/purchases_viewmodel.dart';
+import '../../viewmodels/theme_viewmodel.dart';
 
 class _SettingsTexts {
   static const title = 'Ajustes';
@@ -18,6 +19,12 @@ class _SettingsTexts {
   static const accountSummaryTitle = 'Resumo da conta';
   static const accountSummarySubtitle =
       'Acompanhe os dados cadastrados e gerencie suas informações.';
+
+  static const appearanceSection = 'Aparência';
+  static const themeTitle = 'Tema do app';
+  static const themeSubtitle = 'Escolha entre modo claro e modo escuro.';
+  static const lightTheme = 'Claro';
+  static const darkTheme = 'Escuro';
 
   static const accountDataSection = 'Dados da conta';
 
@@ -148,6 +155,11 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                     productsCount: productsCount,
                     purchasesCount: purchasesCount,
                     itemsCount: itemsCount,
+                  ),
+                  const SizedBox(height: 16),
+                  const _SettingsSection(
+                    title: _SettingsTexts.appearanceSection,
+                    child: _ThemeModeCard(),
                   ),
                   const SizedBox(height: 16),
                   _SettingsSection(
@@ -823,6 +835,142 @@ class _SettingsFeedback extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ThemeModeCard extends ConsumerWidget {
+  const _ThemeModeCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeProvider);
+    final themeViewModel = ref.read(themeProvider.notifier);
+
+    final isLightSelected = themeMode == ThemeMode.light;
+    final isDarkSelected = themeMode == ThemeMode.dark;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.palette_outlined, color: AppColors.primary, size: 22),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  _SettingsTexts.themeTitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            _SettingsTexts.themeSubtitle,
+            softWrap: true,
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 11.5,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _ThemeModeOption(
+                  icon: Icons.light_mode_outlined,
+                  label: _SettingsTexts.lightTheme,
+                  isSelected: isLightSelected,
+                  onTap: () {
+                    themeViewModel.setLightTheme();
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _ThemeModeOption(
+                  icon: Icons.dark_mode_outlined,
+                  label: _SettingsTexts.darkTheme,
+                  isSelected: isDarkSelected,
+                  onTap: () {
+                    themeViewModel.setDarkTheme();
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ThemeModeOption extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ThemeModeOption({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final foregroundColor = isSelected
+        ? AppColors.primary
+        : AppColors.textSecondary;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primary.withValues(alpha: 0.12)
+              : AppColors.background,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.border,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: foregroundColor, size: 22),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: foregroundColor,
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

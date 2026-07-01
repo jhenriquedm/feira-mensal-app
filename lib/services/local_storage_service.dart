@@ -23,6 +23,7 @@ class LocalStorageService {
   static const String _usersKey = 'feira_mensal_users_v1';
   static const String _currentUserIdKey = 'feira_mensal_current_user_id_v1';
   static const String _offlineSessionKey = 'feira_mensal_offline_session_v1';
+  static const String _themeModeKey = 'feira_mensal_theme_mode_v1';
 
   static String _userScopedKey({
     required String baseKey,
@@ -252,6 +253,26 @@ class LocalStorageService {
 
       await prefs.remove(_offlineSessionKey);
       await prefs.remove(_currentUserIdKey);
+    } catch (_) {
+      // Evita quebrar testes ou execução caso o storage falhe.
+    }
+  }
+
+  static Future<String?> loadThemeMode() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      return prefs.getString(_themeModeKey);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<void> saveThemeMode(String themeMode) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      await prefs.setString(_themeModeKey, themeMode);
     } catch (_) {
       // Evita quebrar testes ou execução caso o storage falhe.
     }
