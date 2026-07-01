@@ -650,9 +650,11 @@ class _ReportsHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(bottom: BorderSide(color: AppColors.border)),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceColor(context),
+        border: Border(
+          bottom: BorderSide(color: AppColors.borderColor(context)),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -662,6 +664,7 @@ class _ReportsHeader extends StatelessWidget {
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
               fontSize: 26,
               fontWeight: FontWeight.w800,
+              color: AppColors.textPrimaryColor(context),
             ),
           ),
           const SizedBox(height: 5),
@@ -669,7 +672,9 @@ class _ReportsHeader extends StatelessWidget {
             _ReportsTexts.subtitle,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondaryColor(context),
+            ),
           ),
           const SizedBox(height: 16),
           Row(
@@ -680,7 +685,9 @@ class _ReportsHeader extends StatelessWidget {
                   title: 'Compras analisadas',
                   value: totalPurchases.toString(),
                   foregroundColor: AppColors.primary,
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.10),
+                  backgroundColor: AppColors.primary.withValues(
+                    alpha: AppColors.isDark(context) ? 0.18 : 0.10,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -690,7 +697,9 @@ class _ReportsHeader extends StatelessWidget {
                   title: 'Itens encontrados',
                   value: totalRecords.toString(),
                   foregroundColor: AppColors.success,
-                  backgroundColor: AppColors.success.withValues(alpha: 0.10),
+                  backgroundColor: AppColors.success.withValues(
+                    alpha: AppColors.isDark(context) ? 0.18 : 0.10,
+                  ),
                 ),
               ),
             ],
@@ -701,10 +710,14 @@ class _ReportsHeader extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.08),
+                color: AppColors.primary.withValues(
+                  alpha: AppColors.isDark(context) ? 0.14 : 0.08,
+                ),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.16),
+                  color: AppColors.primary.withValues(
+                    alpha: AppColors.isDark(context) ? 0.28 : 0.16,
+                  ),
                 ),
               ),
               child: Row(
@@ -713,7 +726,9 @@ class _ReportsHeader extends StatelessWidget {
                     width: 38,
                     height: 38,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.12),
+                      color: AppColors.primary.withValues(
+                        alpha: AppColors.isDark(context) ? 0.18 : 0.12,
+                      ),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Icon(
@@ -727,10 +742,10 @@ class _ReportsHeader extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Total analisado',
                           style: TextStyle(
-                            color: AppColors.textSecondary,
+                            color: AppColors.textSecondaryColor(context),
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                           ),
@@ -781,6 +796,11 @@ class _HeaderInfoCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(17),
+        border: Border.all(
+          color: foregroundColor.withValues(
+            alpha: AppColors.isDark(context) ? 0.22 : 0,
+          ),
+        ),
       ),
       child: Row(
         children: [
@@ -849,6 +869,7 @@ class _ReportsFilterPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: AppColors.surfaceColor(context),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
         child: Column(
@@ -867,6 +888,7 @@ class _ReportsFilterPanel extends StatelessWidget {
                     _ReportsTexts.filters,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimaryColor(context),
                     ),
                   ),
                 ),
@@ -930,8 +952,13 @@ class _ReportDropdownFilter extends StatelessWidget {
       isExpanded: true,
       menuMaxHeight: 260,
       borderRadius: BorderRadius.circular(18),
-      dropdownColor: AppColors.surface,
-      decoration: _reportInputDecoration(label),
+      dropdownColor: AppColors.surfaceColor(context),
+      style: TextStyle(
+        color: AppColors.textPrimaryColor(context),
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+      ),
+      decoration: _reportInputDecoration(context, label),
       items: options.map((option) {
         return DropdownMenuItem<String>(
           value: option.value,
@@ -1076,9 +1103,15 @@ class _InsightSummaryCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.09),
+        color: AppColors.primary.withValues(
+          alpha: AppColors.isDark(context) ? 0.14 : 0.09,
+        ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
+        border: Border.all(
+          color: AppColors.primary.withValues(
+            alpha: AppColors.isDark(context) ? 0.30 : 0.22,
+          ),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1087,7 +1120,9 @@ class _InsightSummaryCard extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.13),
+              color: AppColors.primary.withValues(
+                alpha: AppColors.isDark(context) ? 0.18 : 0.13,
+              ),
               borderRadius: BorderRadius.circular(14),
             ),
             child: const Icon(
@@ -1101,8 +1136,8 @@ class _InsightSummaryCard extends StatelessWidget {
             child: Text(
               summary,
               softWrap: true,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
+              style: TextStyle(
+                color: AppColors.textPrimaryColor(context),
                 fontSize: 12,
                 height: 1.42,
                 fontWeight: FontWeight.w700,
@@ -1138,9 +1173,9 @@ class _InsightCard extends StatelessWidget {
       constraints: const BoxConstraints(minHeight: 132),
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceColor(context),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1151,8 +1186,8 @@ class _InsightCard extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              color: AppColors.textSecondaryColor(context),
               fontSize: 10.5,
               fontWeight: FontWeight.w700,
             ),
@@ -1162,8 +1197,8 @@ class _InsightCard extends StatelessWidget {
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
+            style: TextStyle(
+              color: AppColors.textPrimaryColor(context),
               fontSize: 12.5,
               fontWeight: FontWeight.w900,
             ),
@@ -1184,8 +1219,8 @@ class _InsightCard extends StatelessWidget {
             subtitle,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              color: AppColors.textSecondaryColor(context),
               fontSize: 10.5,
               height: 1.25,
             ),
@@ -1275,7 +1310,7 @@ class _MetricsGrid extends StatelessWidget {
                 icon: Icons.category_outlined,
                 label: 'Categorias',
                 value: categoriesCount.toString(),
-                color: AppColors.textSecondary,
+                color: AppColors.textSecondaryColor(context),
               ),
             ),
           ],
@@ -1304,9 +1339,9 @@ class _MetricCard extends StatelessWidget {
       constraints: const BoxConstraints(minHeight: 92),
       padding: const EdgeInsets.all(13),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceColor(context),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1317,8 +1352,8 @@ class _MetricCard extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              color: AppColors.textSecondaryColor(context),
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
@@ -1370,14 +1405,14 @@ class _PeriodComparisonCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final itemsLabel = period.itemsCount == 1 ? 'item' : 'itens';
     final purchasesLabel = period.purchasesCount == 1 ? 'compra' : 'compras';
-    final variationColor = _variationColor(period.variationType);
+    final variationColor = _variationColor(context, period.variationType);
 
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceColor(context),
         borderRadius: BorderRadius.circular(19),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Column(
         children: [
@@ -1387,7 +1422,9 @@ class _PeriodComparisonCard extends StatelessWidget {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: variationColor.withValues(alpha: 0.10),
+                  color: variationColor.withValues(
+                    alpha: AppColors.isDark(context) ? 0.18 : 0.10,
+                  ),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
@@ -1405,8 +1442,8 @@ class _PeriodComparisonCard extends StatelessWidget {
                       period.periodLabel,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
+                      style: TextStyle(
+                        color: AppColors.textPrimaryColor(context),
                         fontSize: 14,
                         fontWeight: FontWeight.w900,
                       ),
@@ -1416,8 +1453,8 @@ class _PeriodComparisonCard extends StatelessWidget {
                       '${period.itemsCount} $itemsLabel • ${period.purchasesCount} $purchasesLabel',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
+                      style: TextStyle(
+                        color: AppColors.textSecondaryColor(context),
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                       ),
@@ -1446,9 +1483,15 @@ class _PeriodComparisonCard extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
             decoration: BoxDecoration(
-              color: variationColor.withValues(alpha: 0.08),
+              color: variationColor.withValues(
+                alpha: AppColors.isDark(context) ? 0.14 : 0.08,
+              ),
               borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: variationColor.withValues(alpha: 0.22)),
+              border: Border.all(
+                color: variationColor.withValues(
+                  alpha: AppColors.isDark(context) ? 0.30 : 0.22,
+                ),
+              ),
             ),
             child: Row(
               children: [
@@ -1479,14 +1522,14 @@ class _PeriodComparisonCard extends StatelessWidget {
     );
   }
 
-  Color _variationColor(_PeriodVariationType type) {
+  Color _variationColor(BuildContext context, _PeriodVariationType type) {
     switch (type) {
       case _PeriodVariationType.increase:
         return AppColors.danger;
       case _PeriodVariationType.decrease:
         return AppColors.success;
       case _PeriodVariationType.neutral:
-        return AppColors.textSecondary;
+        return AppColors.textSecondaryColor(context);
       case _PeriodVariationType.noPrevious:
         return AppColors.primary;
     }
@@ -1518,6 +1561,7 @@ class _GroupSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: AppColors.surfaceColor(context),
       child: Padding(
         padding: const EdgeInsets.all(8),
         child: Row(
@@ -1540,7 +1584,7 @@ class _GroupSelector extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? AppColors.primary.withValues(alpha: 0.12)
+                          ? AppColors.selectedPrimaryBackground(context)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(15),
                     ),
@@ -1552,7 +1596,7 @@ class _GroupSelector extends StatelessWidget {
                       style: TextStyle(
                         color: isSelected
                             ? AppColors.primary
-                            : AppColors.textSecondary,
+                            : AppColors.textSecondaryColor(context),
                         fontSize: 10.5,
                         fontWeight: FontWeight.w800,
                       ),
@@ -1603,9 +1647,9 @@ class _GroupReportCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceColor(context),
         borderRadius: BorderRadius.circular(19),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Row(
         children: [
@@ -1613,7 +1657,7 @@ class _GroupReportCard extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.10),
+              color: AppColors.primarySoftBackground(context),
               borderRadius: BorderRadius.circular(14),
             ),
             child: const Icon(
@@ -1631,8 +1675,8 @@ class _GroupReportCard extends StatelessWidget {
                   group.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: AppColors.textPrimaryColor(context),
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
                   ),
@@ -1642,8 +1686,8 @@ class _GroupReportCard extends StatelessWidget {
                   group.subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
+                  style: TextStyle(
+                    color: AppColors.textSecondaryColor(context),
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1653,8 +1697,8 @@ class _GroupReportCard extends StatelessWidget {
                   '${group.itemsCount} $itemsLabel • ${group.purchasesCount} $purchasesLabel',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
+                  style: TextStyle(
+                    color: AppColors.textSecondaryColor(context),
                     fontSize: 11,
                   ),
                 ),
@@ -1712,9 +1756,9 @@ class _ReportItemCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceColor(context),
         borderRadius: BorderRadius.circular(19),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1732,8 +1776,8 @@ class _ReportItemCard extends StatelessWidget {
                   record.productLabel,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: AppColors.textPrimaryColor(context),
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
                   ),
@@ -1760,8 +1804,8 @@ class _ReportItemCard extends StatelessWidget {
             '${record.purchaseName} • ${record.market}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              color: AppColors.textSecondaryColor(context),
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -1774,8 +1818,8 @@ class _ReportItemCard extends StatelessWidget {
             '${_reportCurrencyFormatter.format(record.item.unitPrice)}',
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              color: AppColors.textSecondaryColor(context),
               fontSize: 11,
               height: 1.35,
             ),
@@ -1801,9 +1845,10 @@ class _ReportSection extends StatelessWidget {
           title,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w900,
+            color: AppColors.textPrimaryColor(context),
+          ),
         ),
         const SizedBox(height: 10),
         child,
@@ -1827,7 +1872,7 @@ class _EmptyReportsState extends StatelessWidget {
               width: 84,
               height: 84,
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.10),
+                color: AppColors.primarySoftBackground(context),
                 borderRadius: BorderRadius.circular(27),
               ),
               child: const Icon(
@@ -1840,15 +1885,19 @@ class _EmptyReportsState extends StatelessWidget {
             Text(
               _ReportsTexts.emptyTitle,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: AppColors.textPrimaryColor(context),
+                fontWeight: FontWeight.w900,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               _ReportsTexts.emptySubtitle,
               textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(height: 1.45),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                height: 1.45,
+                color: AppColors.textSecondaryColor(context),
+              ),
             ),
           ],
         ),
@@ -1872,33 +1921,35 @@ class _NoFilteredResultsState extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(18, 24, 18, 24),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceColor(context),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Column(
         children: [
           Icon(
             Icons.search_off_rounded,
             size: 38,
-            color: AppColors.textSecondary.withValues(alpha: 0.85),
+            color: AppColors.textSecondaryColor(
+              context,
+            ).withValues(alpha: 0.85),
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             _ReportsTexts.noResultsTitle,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: AppColors.textPrimary,
+              color: AppColors.textPrimaryColor(context),
               fontSize: 15,
               fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 5),
-          const Text(
+          Text(
             _ReportsTexts.noResultsSubtitle,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: AppColors.textSecondary,
+              color: AppColors.textSecondaryColor(context),
               fontSize: 12,
               height: 1.35,
             ),
@@ -2216,17 +2267,21 @@ String _formatQuantity(double value) {
   return value.toStringAsFixed(2).replaceAll('.', ',');
 }
 
-InputDecoration _reportInputDecoration(String label) {
+InputDecoration _reportInputDecoration(BuildContext context, String label) {
   return InputDecoration(
     labelText: label,
+    labelStyle: TextStyle(color: AppColors.textSecondaryColor(context)),
+    hintStyle: TextStyle(
+      color: AppColors.textSecondaryColor(context).withValues(alpha: 0.75),
+    ),
     filled: true,
     isDense: true,
-    fillColor: AppColors.background,
+    fillColor: AppColors.surfaceSoftColor(context),
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: const BorderSide(color: AppColors.border),
+      borderSide: BorderSide(color: AppColors.borderColor(context)),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
