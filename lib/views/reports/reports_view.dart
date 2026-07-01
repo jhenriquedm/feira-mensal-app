@@ -17,6 +17,35 @@ final NumberFormat _reportCurrencyFormatter = NumberFormat.currency(
 final DateFormat _reportDateFormatter = DateFormat('dd/MM/yyyy');
 final DateFormat _reportPeriodKeyFormatter = DateFormat('yyyy-MM');
 
+class _ReportsTexts {
+  static const title = 'Relatórios';
+  static const subtitle =
+      'Analise seus gastos por período, produto e categoria.';
+
+  static const filters = 'Filtros';
+  static const clear = 'Limpar';
+  static const clearFilters = 'Limpar filtros';
+
+  static const allPeriods = 'Todos os períodos';
+  static const allCategories = 'Todas as categorias';
+  static const allProducts = 'Todos os produtos';
+
+  static const emptyTitle = 'Nenhum dado para analisar';
+  static const emptySubtitle =
+      'Crie uma compra e adicione itens para visualizar os relatórios.';
+
+  static const noResultsTitle = 'Nenhum resultado encontrado';
+  static const noResultsSubtitle =
+      'Altere os filtros para visualizar outros dados.';
+
+  static const smartSummary = 'Resumo inteligente';
+  static const totalByPurchase = 'Total por compra';
+  static const totalByCategory = 'Total por categoria';
+  static const totalByProduct = 'Total por produto';
+  static const totalByMarket = 'Total por mercado';
+  static const foundItems = 'Itens encontrados';
+}
+
 class ReportsView extends ConsumerStatefulWidget {
   const ReportsView({super.key});
 
@@ -197,7 +226,10 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
       });
 
     return [
-      const _FilterOption(value: _allFilterValue, label: 'Todos os períodos'),
+      const _FilterOption(
+        value: _allFilterValue,
+        label: _ReportsTexts.allPeriods,
+      ),
       ...periodEntries.map((entry) {
         return _FilterOption(value: entry.key, label: entry.value);
       }),
@@ -217,7 +249,10 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
       });
 
     return [
-      const _FilterOption(value: _allFilterValue, label: 'Todas as categorias'),
+      const _FilterOption(
+        value: _allFilterValue,
+        label: _ReportsTexts.allCategories,
+      ),
       ...categoryEntries.map((entry) {
         return _FilterOption(value: entry.key, label: entry.value);
       }),
@@ -237,7 +272,10 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
       });
 
     return [
-      const _FilterOption(value: _allFilterValue, label: 'Todos os produtos'),
+      const _FilterOption(
+        value: _allFilterValue,
+        label: _ReportsTexts.allProducts,
+      ),
       ...productEntries.map((entry) {
         return _FilterOption(value: entry.key, label: entry.value);
       }),
@@ -530,7 +568,7 @@ class _ReportsHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Relatórios',
+            _ReportsTexts.title,
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
               fontSize: 26,
               fontWeight: FontWeight.w800,
@@ -538,7 +576,9 @@ class _ReportsHeader extends StatelessWidget {
           ),
           const SizedBox(height: 5),
           Text(
-            'Analise seus gastos por período, produto e categoria.',
+            _ReportsTexts.subtitle,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 16),
@@ -557,7 +597,7 @@ class _ReportsHeader extends StatelessWidget {
               Expanded(
                 child: _HeaderInfoCard(
                   icon: Icons.inventory_2_outlined,
-                  title: 'Itens lançados',
+                  title: 'Itens registrados',
                   value: totalRecords.toString(),
                   foregroundColor: AppColors.success,
                   backgroundColor: AppColors.success.withValues(alpha: 0.10),
@@ -598,7 +638,7 @@ class _ReportsHeader extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Total geral analisado',
+                          'Total analisado',
                           style: TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 11,
@@ -734,7 +774,7 @@ class _ReportsFilterPanel extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Filtros',
+                    _ReportsTexts.filters,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
@@ -744,7 +784,7 @@ class _ReportsFilterPanel extends StatelessWidget {
                   TextButton.icon(
                     onPressed: onClearFilters,
                     icon: const Icon(Icons.restart_alt_rounded, size: 18),
-                    label: const Text('Limpar'),
+                    label: const Text(_ReportsTexts.clear),
                   ),
               ],
             ),
@@ -827,7 +867,7 @@ class _InsightsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _ReportSection(
-      title: 'Resumo inteligente',
+      title: _ReportsTexts.smartSummary,
       child: Column(
         children: [
           _InsightSummaryCard(summary: insights.summary),
@@ -970,6 +1010,7 @@ class _InsightSummaryCard extends StatelessWidget {
           Expanded(
             child: Text(
               summary,
+              softWrap: true,
               style: const TextStyle(
                 color: AppColors.textPrimary,
                 fontSize: 12,
@@ -1300,6 +1341,9 @@ class _GroupReportCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final itemsLabel = group.itemsCount == 1 ? 'item' : 'itens';
+    final purchasesLabel = group.purchasesCount == 1 ? 'compra' : 'compras';
+
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
       decoration: BoxDecoration(
@@ -1350,7 +1394,9 @@ class _GroupReportCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  '${group.itemsCount} itens • ${group.purchasesCount} compras',
+                  '${group.itemsCount} $itemsLabel • ${group.purchasesCount} $purchasesLabel',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 11,
@@ -1387,7 +1433,7 @@ class _ReportItemsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _ReportSection(
-      title: 'Itens encontrados',
+      title: _ReportsTexts.foundItems,
       child: Column(
         children: records.map((record) {
           return Padding(
@@ -1497,6 +1543,8 @@ class _ReportSection extends StatelessWidget {
       children: [
         Text(
           title,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: Theme.of(
             context,
           ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
@@ -1534,13 +1582,13 @@ class _EmptyReportsState extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Text(
-              'Nenhum dado para analisar',
+              _ReportsTexts.emptyTitle,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
             Text(
-              'Crie uma compra e adicione itens para visualizar os relatórios.',
+              _ReportsTexts.emptySubtitle,
               textAlign: TextAlign.center,
               style: Theme.of(
                 context,
@@ -1581,7 +1629,7 @@ class _NoFilteredResultsState extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           const Text(
-            'Nenhum resultado encontrado',
+            _ReportsTexts.noResultsTitle,
             textAlign: TextAlign.center,
             style: TextStyle(
               color: AppColors.textPrimary,
@@ -1591,7 +1639,7 @@ class _NoFilteredResultsState extends StatelessWidget {
           ),
           const SizedBox(height: 5),
           const Text(
-            'Altere os filtros para visualizar outros dados.',
+            _ReportsTexts.noResultsSubtitle,
             textAlign: TextAlign.center,
             style: TextStyle(
               color: AppColors.textSecondary,
@@ -1604,7 +1652,7 @@ class _NoFilteredResultsState extends StatelessWidget {
             OutlinedButton.icon(
               onPressed: onClearFilters,
               icon: const Icon(Icons.restart_alt_rounded),
-              label: const Text('Limpar filtros'),
+              label: const Text(_ReportsTexts.clearFilters),
             ),
           ],
         ],
@@ -1785,13 +1833,13 @@ extension _ReportGroupTypeExtension on _ReportGroupType {
   String get sectionTitle {
     switch (this) {
       case _ReportGroupType.purchases:
-        return 'Total por compra';
+        return _ReportsTexts.totalByPurchase;
       case _ReportGroupType.categories:
-        return 'Total por categoria';
+        return _ReportsTexts.totalByCategory;
       case _ReportGroupType.products:
-        return 'Total por produto';
+        return _ReportsTexts.totalByProduct;
       case _ReportGroupType.markets:
-        return 'Total por mercado';
+        return _ReportsTexts.totalByMarket;
     }
   }
 }
