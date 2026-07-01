@@ -13,6 +13,28 @@ import '../../viewmodels/purchases_viewmodel.dart';
 typedef ProductsFeedbackCallback =
     void Function(String message, {bool isError});
 
+class _ProductsMessages {
+  static const productCreated = 'Produto cadastrado com sucesso.';
+  static const productUpdated = 'Produto atualizado com sucesso.';
+  static const productDeleted = 'Produto excluído com sucesso.';
+  static const productDuplicate =
+      'Já existe um produto cadastrado com esse nome e marca.';
+  static const productDeleteBlocked =
+      'Este produto não pode ser excluído porque já foi usado em uma compra.';
+  static const productLinkedInfo =
+      'Este produto já foi usado em uma compra. Para preservar o histórico, altere apenas Ativo/Inativo.';
+  static const productRequiredFields =
+      'Preencha todos os campos obrigatórios do produto.';
+
+  static const categoryCreated = 'Categoria cadastrada com sucesso.';
+  static const categoryUpdated = 'Categoria atualizada com sucesso.';
+  static const categoryDeleted = 'Categoria excluída com sucesso.';
+  static const categoryDuplicate =
+      'Já existe uma categoria cadastrada com esse nome.';
+  static const categoryDeleteBlocked =
+      'Esta categoria não pode ser excluída porque possui produtos vinculados.';
+}
+
 class ProductsView extends ConsumerStatefulWidget {
   const ProductsView({super.key});
 
@@ -67,34 +89,15 @@ class _ProductsViewState extends ConsumerState<ProductsView> {
       children: [
         Column(
           children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
-              decoration: const BoxDecoration(
-                color: AppColors.surface,
-                border: Border(bottom: BorderSide(color: AppColors.border)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Gerenciamento',
-                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  _ManualSegmentedTabs(
-                    selectedIndex: _selectedTabIndex,
-                    onChanged: (index) {
-                      setState(() {
-                        _selectedTabIndex = index;
-                      });
-                    },
-                  ),
-                ],
-              ),
+            _ProductsHeader(
+              selectedTabIndex: _selectedTabIndex,
+              productsCount: state.products.length,
+              categoriesCount: state.categories.length,
+              onTabChanged: (index) {
+                setState(() {
+                  _selectedTabIndex = index;
+                });
+              },
             ),
             Expanded(
               child: IndexedStack(
@@ -129,6 +132,136 @@ class _ProductsViewState extends ConsumerState<ProductsView> {
             ),
           ),
       ],
+    );
+  }
+}
+
+class _ProductsHeader extends StatelessWidget {
+  final int selectedTabIndex;
+  final int productsCount;
+  final int categoriesCount;
+  final ValueChanged<int> onTabChanged;
+
+  const _ProductsHeader({
+    required this.selectedTabIndex,
+    required this.productsCount,
+    required this.categoriesCount,
+    required this.onTabChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(bottom: BorderSide(color: AppColors.border)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Produtos',
+            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+              fontSize: 26,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            'Cadastre produtos e organize suas categorias.',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _ProductsHeaderChip(
+                  icon: Icons.shopping_basket_outlined,
+                  label: 'Produtos',
+                  value: productsCount,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _ProductsHeaderChip(
+                  icon: Icons.category_outlined,
+                  label: 'Categorias',
+                  value: categoriesCount,
+                  color: AppColors.success,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          _ManualSegmentedTabs(
+            selectedIndex: selectedTabIndex,
+            onChanged: onTabChanged,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProductsHeaderChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final int value;
+  final Color color;
+
+  const _ProductsHeaderChip({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(17),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value.toString(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -228,10 +361,11 @@ class _ProductsTab extends StatelessWidget {
           ? const _EmptyState(
               icon: Icons.shopping_basket_outlined,
               title: 'Nenhum produto cadastrado',
-              subtitle: 'Cadastre produtos para montar suas feiras mensais.',
+              subtitle:
+                  'Cadastre produtos para montar suas compras mensais com mais rapidez.',
             )
           : ListView.separated(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
               itemCount: products.length,
               separatorBuilder: (context, index) {
                 return const SizedBox(height: 10);
@@ -240,137 +374,41 @@ class _ProductsTab extends StatelessWidget {
                 final product = products[index];
                 final isLinked = linkedProductIds.contains(product.id);
 
-                return Card(
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: product.isActive
-                          ? const Color(0xFFE8F7EE)
-                          : const Color(0xFFF3F4F6),
-                      child: Icon(
-                        Icons.shopping_basket_outlined,
-                        color: product.isActive
-                            ? AppColors.primary
-                            : AppColors.textSecondary,
-                      ),
-                    ),
-                    title: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            product.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: product.isActive
-                                  ? AppColors.textPrimary
-                                  : AppColors.textSecondary,
-                            ),
-                          ),
-                        ),
-                        if (isLinked) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.10),
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            child: const Text(
-                              'Usado',
-                              style: TextStyle(
-                                color: AppColors.primary,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    subtitle: Text(
-                      '${viewModel.getCategoryName(product.categoryId)} • '
-                      '${product.unit} • ${product.brand ?? 'Sem marca'}',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: PopupMenuButton<String>(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      onSelected: (value) {
-                        if (value == 'edit') {
-                          _showProductDialog(
-                            context,
-                            state,
-                            viewModel,
-                            linkedProductIds,
-                            product: product,
-                          );
-                        }
+                return _ProductListCard(
+                  product: product,
+                  categoryName: viewModel.getCategoryName(product.categoryId),
+                  isLinked: isLinked,
+                  onEdit: () {
+                    _showProductDialog(
+                      context,
+                      state,
+                      viewModel,
+                      linkedProductIds,
+                      product: product,
+                    );
+                  },
+                  onDelete: () {
+                    if (!viewModel.canDeleteProduct(
+                      product.id,
+                      linkedProductIds: linkedProductIds,
+                    )) {
+                      onFeedback(
+                        _ProductsMessages.productDeleteBlocked,
+                        isError: true,
+                      );
+                      return;
+                    }
 
-                        if (value == 'delete') {
-                          if (!viewModel.canDeleteProduct(
-                            product.id,
-                            linkedProductIds: linkedProductIds,
-                          )) {
-                            onFeedback(
-                              'Produto não pode ser excluído, pois está vinculado a uma compra.',
-                              isError: true,
-                            );
-                            return;
-                          }
-
-                          Future<void>.delayed(
-                            const Duration(milliseconds: 160),
-                            () {
-                              viewModel.deleteProduct(product.id);
-                              onFeedback('Produto excluído com sucesso.');
-                            },
-                          );
-                        }
-                      },
-                      itemBuilder: (context) {
-                        return const [
-                          PopupMenuItem(
-                            value: 'edit',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.edit_outlined,
-                                  size: 20,
-                                  color: AppColors.primary,
-                                ),
-                                SizedBox(width: 10),
-                                Text('Editar'),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem(
-                            value: 'delete',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.delete_outline,
-                                  size: 20,
-                                  color: AppColors.danger,
-                                ),
-                                SizedBox(width: 10),
-                                Text('Excluir'),
-                              ],
-                            ),
-                          ),
-                        ];
-                      },
-                    ),
-                  ),
+                    Future<void>.delayed(const Duration(milliseconds: 160), () {
+                      viewModel.deleteProduct(product.id);
+                      onFeedback(_ProductsMessages.productDeleted);
+                    });
+                  },
                 );
               },
             ),
       floatingActionButton: FloatingActionButton(
+        tooltip: 'Adicionar produto',
         onPressed: () {
           _showProductDialog(context, state, viewModel, linkedProductIds);
         },
@@ -423,11 +461,15 @@ class _ProductsTab extends StatelessWidget {
               }
 
               return AlertDialog(
+                insetPadding: const EdgeInsets.symmetric(
+                  horizontal: 28,
+                  vertical: 24,
+                ),
                 title: Text(
                   product == null ? 'Novo produto' : 'Editar produto',
                 ),
                 content: SizedBox(
-                  width: 360,
+                  width: 300,
                   child: Form(
                     key: formKey,
                     child: SingleChildScrollView(
@@ -442,43 +484,7 @@ class _ProductsTab extends StatelessWidget {
                             const SizedBox(height: 12),
                           ],
                           if (isLinked) ...[
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(
-                                  alpha: 0.09,
-                                ),
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(
-                                  color: AppColors.primary.withValues(
-                                    alpha: 0.22,
-                                  ),
-                                ),
-                              ),
-                              child: const Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Icon(
-                                    Icons.info_outline_rounded,
-                                    size: 19,
-                                    color: AppColors.primary,
-                                  ),
-                                  SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      'Este produto já foi usado em uma compra. Para preservar o histórico, altere apenas o campo Ativo/Inativo.',
-                                      style: TextStyle(
-                                        color: AppColors.primary,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
-                                        height: 1.35,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                            const _LinkedProductWarning(),
                             const SizedBox(height: 12),
                           ],
                           _premiumTextField(
@@ -541,7 +547,10 @@ class _ProductsTab extends StatelessWidget {
                             items: units.map((unit) {
                               return DropdownMenuItem<String>(
                                 value: unit,
-                                child: Text(unit),
+                                child: Text(
+                                  unit,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               );
                             }).toList(),
                             validator: (value) {
@@ -570,8 +579,8 @@ class _ProductsTab extends StatelessWidget {
                             title: const Text('Ativo/Inativo'),
                             subtitle: Text(
                               isActive
-                                  ? 'Produto disponível para novas compras.'
-                                  : 'Produto oculto para novas compras.',
+                                  ? 'Disponível para novas compras.'
+                                  : 'Oculto para novas compras.',
                               style: const TextStyle(
                                 color: AppColors.textSecondary,
                                 fontSize: 12,
@@ -614,15 +623,13 @@ class _ProductsTab extends StatelessWidget {
                       );
 
                       if (exists) {
-                        showDialogMessage(
-                          'Já existe um produto com esse nome e marca.',
-                        );
+                        showDialogMessage(_ProductsMessages.productDuplicate);
                         return;
                       }
 
                       if (categoryId == null || unit == null) {
                         showDialogMessage(
-                          'Preencha todos os campos obrigatórios.',
+                          _ProductsMessages.productRequiredFields,
                         );
                         return;
                       }
@@ -653,9 +660,7 @@ class _ProductsTab extends StatelessWidget {
                           );
 
                       if (!canEditCriticalData) {
-                        showDialogMessage(
-                          'Este produto já foi usado em uma compra. Para preservar o histórico, altere apenas o campo Ativo/Inativo.',
-                        );
+                        showDialogMessage(_ProductsMessages.productLinkedInfo);
                         return;
                       }
 
@@ -695,7 +700,7 @@ class _ProductsTab extends StatelessWidget {
           isActive: result.isActive,
         );
 
-        onFeedback('Produto cadastrado com sucesso.');
+        onFeedback(_ProductsMessages.productCreated);
         return;
       }
 
@@ -709,7 +714,7 @@ class _ProductsTab extends StatelessWidget {
           isActive: result.isActive,
         );
 
-        onFeedback('Produto atualizado com sucesso.');
+        onFeedback(_ProductsMessages.productUpdated);
       }
     } finally {
       nameController.dispose();
@@ -751,6 +756,178 @@ class _ProductsTab extends StatelessWidget {
   }
 }
 
+class _ProductListCard extends StatelessWidget {
+  final ProductModel product;
+  final String categoryName;
+  final bool isLinked;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _ProductListCard({
+    required this.product,
+    required this.categoryName,
+    required this.isLinked,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        contentPadding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
+        leading: CircleAvatar(
+          backgroundColor: product.isActive
+              ? AppColors.primary.withValues(alpha: 0.10)
+              : const Color(0xFFF3F4F6),
+          child: Icon(
+            Icons.shopping_basket_outlined,
+            color: product.isActive
+                ? AppColors.primary
+                : AppColors.textSecondary,
+          ),
+        ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                product.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: product.isActive
+                      ? AppColors.textPrimary
+                      : AppColors.textSecondary,
+                ),
+              ),
+            ),
+            if (isLinked) ...[const SizedBox(width: 8), const _LinkedBadge()],
+          ],
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 3),
+          child: Text(
+            '$categoryName • ${product.unit} • ${product.brand ?? 'Sem marca'}',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+              height: 1.3,
+            ),
+          ),
+        ),
+        trailing: PopupMenuButton<String>(
+          tooltip: 'Opções do produto',
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          onSelected: (value) {
+            if (value == 'edit') {
+              onEdit();
+            }
+
+            if (value == 'delete') {
+              onDelete();
+            }
+          },
+          itemBuilder: (context) {
+            return const [
+              PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.edit_outlined,
+                      size: 20,
+                      color: AppColors.primary,
+                    ),
+                    SizedBox(width: 10),
+                    Text('Editar'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.delete_outline,
+                      size: 20,
+                      color: AppColors.danger,
+                    ),
+                    SizedBox(width: 10),
+                    Text('Excluir'),
+                  ],
+                ),
+              ),
+            ];
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _LinkedBadge extends StatelessWidget {
+  const _LinkedBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: const Text(
+        'Usado',
+        style: TextStyle(
+          color: AppColors.primary,
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+}
+
+class _LinkedProductWarning extends StatelessWidget {
+  const _LinkedProductWarning();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline_rounded, size: 19, color: AppColors.primary),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              _ProductsMessages.productLinkedInfo,
+              style: TextStyle(
+                color: AppColors.primary,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _CategoriesTab extends StatelessWidget {
   final ProductsState state;
   final ProductsViewModel viewModel;
@@ -775,7 +952,7 @@ class _CategoriesTab extends StatelessWidget {
               subtitle: 'Cadastre categorias para organizar seus produtos.',
             )
           : GridView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
               itemCount: categories.length,
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
@@ -786,123 +963,24 @@ class _CategoriesTab extends StatelessWidget {
               itemBuilder: (context, index) {
                 final category = categories[index];
 
-                return Card(
-                  child: Stack(
-                    children: [
-                      Positioned(
-                        top: 6,
-                        left: 6,
-                        child: PopupMenuButton<String>(
-                          padding: EdgeInsets.zero,
-                          iconSize: 20,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          onSelected: (value) {
-                            if (value == 'edit') {
-                              _showCategoryDialog(
-                                context,
-                                state,
-                                viewModel,
-                                category: category,
-                              );
-                            }
-
-                            if (value == 'delete') {
-                              _deleteCategory(
-                                viewModel: viewModel,
-                                category: category,
-                              );
-                            }
-                          },
-                          itemBuilder: (context) {
-                            return const [
-                              PopupMenuItem(
-                                value: 'edit',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.edit_outlined,
-                                      size: 20,
-                                      color: AppColors.primary,
-                                    ),
-                                    SizedBox(width: 10),
-                                    Text('Editar'),
-                                  ],
-                                ),
-                              ),
-                              PopupMenuItem(
-                                value: 'delete',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.delete_outline,
-                                      size: 20,
-                                      color: AppColors.danger,
-                                    ),
-                                    SizedBox(width: 10),
-                                    Text('Excluir'),
-                                  ],
-                                ),
-                              ),
-                            ];
-                          },
-                        ),
-                      ),
-                      InkWell(
-                        borderRadius: BorderRadius.circular(20),
-                        onTap: () {
-                          _showCategoryDialog(
-                            context,
-                            state,
-                            viewModel,
-                            category: category,
-                          );
-                        },
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(12, 22, 12, 12),
-                            child: Opacity(
-                              opacity: category.isActive ? 1 : 0.45,
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.category_outlined,
-                                    color: category.isActive
-                                        ? AppColors.primary
-                                        : AppColors.textSecondary,
-                                    size: 28,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    category.name,
-                                    textAlign: TextAlign.center,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(
-                                          color: category.isActive
-                                              ? AppColors.textPrimary
-                                              : AppColors.textSecondary,
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                return _CategoryGridCard(
+                  category: category,
+                  onEdit: () {
+                    _showCategoryDialog(
+                      context,
+                      state,
+                      viewModel,
+                      category: category,
+                    );
+                  },
+                  onDelete: () {
+                    _deleteCategory(viewModel: viewModel, category: category);
+                  },
                 );
               },
             ),
       floatingActionButton: FloatingActionButton(
+        tooltip: 'Adicionar categoria',
         onPressed: () {
           _showCategoryDialog(context, state, viewModel);
         },
@@ -936,77 +1014,98 @@ class _CategoriesTab extends StatelessWidget {
               }
 
               return AlertDialog(
+                insetPadding: const EdgeInsets.symmetric(
+                  horizontal: 28,
+                  vertical: 24,
+                ),
                 title: Text(
                   category == null ? 'Nova categoria' : 'Editar categoria',
                 ),
-                content: Form(
-                  key: formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (dialogMessage != null) ...[
-                        _DialogFeedback(message: dialogMessage!, isError: true),
-                        const SizedBox(height: 12),
-                      ],
-                      _premiumTextField(
-                        controller: controller,
-                        label: 'Nome da categoria',
-                        hint: 'Ex: Hortifruti',
-                        maxLength: 30,
-                        requiredMessage: 'Informe o nome da categoria',
-                      ),
-                      const SizedBox(height: 12),
-                      SwitchListTile(
-                        value: isActive,
-                        activeThumbColor: AppColors.primary,
-                        activeTrackColor: AppColors.primary.withValues(
-                          alpha: 0.35,
-                        ),
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('Ativo/Inativo'),
-                        subtitle: Text(
-                          isActive
-                              ? 'Categoria disponível para novos produtos.'
-                              : 'Categoria ocultada para novos produtos.',
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 12,
-                          ),
-                        ),
-                        onChanged: (value) {
-                          setState(() {
-                            isActive = value;
-                          });
-                        },
-                      ),
-                      if (category != null) ...[
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.danger,
-                              side: const BorderSide(color: AppColors.danger),
+                content: SizedBox(
+                  width: 300,
+                  child: Form(
+                    key: formKey,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (dialogMessage != null) ...[
+                            _DialogFeedback(
+                              message: dialogMessage!,
+                              isError: true,
                             ),
-                            onPressed: () {
-                              if (!viewModel.canDeleteCategory(category.id)) {
-                                showDialogMessage(
-                                  'Categoria não pode ser excluída, pois possui produtos vinculados.',
-                                );
-                                return;
-                              }
-
-                              Navigator.pop(
-                                dialogContext,
-                                _CategoryDialogResult.delete(id: category.id),
-                              );
-                            },
-                            icon: const Icon(Icons.delete_outline, size: 18),
-                            label: const Text('Excluir categoria'),
+                            const SizedBox(height: 12),
+                          ],
+                          _premiumTextField(
+                            controller: controller,
+                            label: 'Nome da categoria',
+                            hint: 'Ex: Hortifruti',
+                            maxLength: 30,
+                            requiredMessage: 'Informe o nome da categoria',
                           ),
-                        ),
-                      ],
-                    ],
+                          const SizedBox(height: 12),
+                          SwitchListTile(
+                            value: isActive,
+                            activeThumbColor: AppColors.primary,
+                            activeTrackColor: AppColors.primary.withValues(
+                              alpha: 0.35,
+                            ),
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Ativo/Inativo'),
+                            subtitle: Text(
+                              isActive
+                                  ? 'Disponível para novos produtos.'
+                                  : 'Oculta para novos produtos.',
+                              style: const TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                isActive = value;
+                              });
+                            },
+                          ),
+                          if (category != null) ...[
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.danger,
+                                  side: const BorderSide(
+                                    color: AppColors.danger,
+                                  ),
+                                ),
+                                onPressed: () {
+                                  if (!viewModel.canDeleteCategory(
+                                    category.id,
+                                  )) {
+                                    showDialogMessage(
+                                      _ProductsMessages.categoryDeleteBlocked,
+                                    );
+                                    return;
+                                  }
+
+                                  Navigator.pop(
+                                    dialogContext,
+                                    _CategoryDialogResult.delete(
+                                      id: category.id,
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  size: 18,
+                                ),
+                                label: const Text('Excluir categoria'),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
                 ),
                 actions: [
@@ -1037,9 +1136,7 @@ class _CategoriesTab extends StatelessWidget {
                       });
 
                       if (categoryExists) {
-                        showDialogMessage(
-                          'Já existe uma categoria com esse nome.',
-                        );
+                        showDialogMessage(_ProductsMessages.categoryDuplicate);
                         return;
                       }
 
@@ -1083,7 +1180,7 @@ class _CategoriesTab extends StatelessWidget {
         case _CategoryDialogAction.create:
           viewModel.addCategory(name: result.name!, isActive: result.isActive!);
 
-          onFeedback('Categoria cadastrada com sucesso.');
+          onFeedback(_ProductsMessages.categoryCreated);
           break;
 
         case _CategoryDialogAction.update:
@@ -1093,13 +1190,13 @@ class _CategoriesTab extends StatelessWidget {
             isActive: result.isActive!,
           );
 
-          onFeedback('Categoria atualizada com sucesso.');
+          onFeedback(_ProductsMessages.categoryUpdated);
           break;
 
         case _CategoryDialogAction.delete:
           viewModel.deleteCategory(result.id!);
 
-          onFeedback('Categoria excluída com sucesso.');
+          onFeedback(_ProductsMessages.categoryDeleted);
           break;
       }
     } finally {
@@ -1112,17 +1209,128 @@ class _CategoriesTab extends StatelessWidget {
     required CategoryModel category,
   }) {
     if (!viewModel.canDeleteCategory(category.id)) {
-      onFeedback(
-        'Categoria não pode ser excluída, pois possui produtos vinculados.',
-        isError: true,
-      );
+      onFeedback(_ProductsMessages.categoryDeleteBlocked, isError: true);
       return;
     }
 
     Future<void>.delayed(const Duration(milliseconds: 160), () {
       viewModel.deleteCategory(category.id);
-      onFeedback('Categoria excluída com sucesso.');
+      onFeedback(_ProductsMessages.categoryDeleted);
     });
+  }
+}
+
+class _CategoryGridCard extends StatelessWidget {
+  final CategoryModel category;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _CategoryGridCard({
+    required this.category,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Stack(
+        children: [
+          Positioned(
+            top: 6,
+            left: 6,
+            child: PopupMenuButton<String>(
+              tooltip: 'Opções da categoria',
+              padding: EdgeInsets.zero,
+              iconSize: 20,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              onSelected: (value) {
+                if (value == 'edit') {
+                  onEdit();
+                }
+
+                if (value == 'delete') {
+                  onDelete();
+                }
+              },
+              itemBuilder: (context) {
+                return const [
+                  PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.edit_outlined,
+                          size: 20,
+                          color: AppColors.primary,
+                        ),
+                        SizedBox(width: 10),
+                        Text('Editar'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.delete_outline,
+                          size: 20,
+                          color: AppColors.danger,
+                        ),
+                        SizedBox(width: 10),
+                        Text('Excluir'),
+                      ],
+                    ),
+                  ),
+                ];
+              },
+            ),
+          ),
+          InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: onEdit,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 22, 12, 12),
+                child: Opacity(
+                  opacity: category.isActive ? 1 : 0.45,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.category_outlined,
+                        color: category.isActive
+                            ? AppColors.primary
+                            : AppColors.textSecondary,
+                        size: 28,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        category.name,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: category.isActive
+                                  ? AppColors.textPrimary
+                                  : AppColors.textSecondary,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -1321,6 +1529,9 @@ class _ProductsLocalFeedback extends StatelessWidget {
         child: Text(
           message,
           textAlign: TextAlign.center,
+          softWrap: true,
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             color: Colors.white,
             fontSize: 12.5,
@@ -1354,6 +1565,9 @@ class _DialogFeedback extends StatelessWidget {
       child: Text(
         message,
         textAlign: TextAlign.center,
+        softWrap: true,
+        maxLines: 3,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: color,
           fontSize: 12,
@@ -1379,13 +1593,21 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(28),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(28, 28, 28, 110),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 58, color: AppColors.textSecondary),
-            const SizedBox(height: 16),
+            Container(
+              width: 82,
+              height: 82,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(26),
+              ),
+              child: Icon(icon, size: 40, color: AppColors.primary),
+            ),
+            const SizedBox(height: 18),
             Text(
               title,
               textAlign: TextAlign.center,
@@ -1395,7 +1617,9 @@ class _EmptyState extends StatelessWidget {
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(height: 1.45),
             ),
           ],
         ),
