@@ -8,6 +8,64 @@ import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/products_viewmodel.dart';
 import '../../viewmodels/purchases_viewmodel.dart';
 
+class _SettingsTexts {
+  static const title = 'Ajustes';
+  static const defaultSubtitle =
+      'Gerencie dados locais, preferências e informações do app.';
+
+  static const userConnected = 'Usuário conectado';
+  static const localDataTitle = 'Dados salvos localmente';
+  static const localDataSubtitle =
+      'As informações permanecem salvas para este usuário mesmo ao atualizar ou fechar o app.';
+
+  static const localDataSection = 'Gerenciar dados locais';
+  static const restoreCategoriesTitle = 'Restaurar categorias padrão';
+  static const restoreCategoriesSubtitle =
+      'Reativa e recria as categorias principais do app sem apagar produtos ou compras.';
+
+  static const clearAllDataTitle = 'Limpar todos os dados';
+  static const clearAllDataSubtitle =
+      'Apaga produtos, compras, itens e relatórios deste usuário.';
+
+  static const accountSection = 'Conta';
+  static const logoutTitle = 'Sair da conta';
+  static const logoutSubtitle =
+      'Encerra a sessão atual e volta para a tela de login. Seus dados continuam salvos.';
+
+  static const aboutSection = 'Sobre o app';
+  static const appName = 'Feira Mensal';
+  static const appDescription =
+      'Controle de compras de mercado, produtos, categorias e relatórios.';
+
+  static const storageTitle = 'Armazenamento';
+  static const storageDescription =
+      'Os dados estão sendo salvos localmente por usuário neste dispositivo.';
+
+  static const versionTitle = 'Versão';
+  static const versionValue = '1.0.0';
+
+  static const restoreSuccess = 'Categorias padrão restauradas com sucesso.';
+  static const clearAllSuccess =
+      'Todos os dados deste usuário foram apagados com sucesso.';
+
+  static const cancel = 'Cancelar';
+
+  static const restoreDialogTitle = 'Restaurar categorias padrão?';
+  static const restoreDialogMessage =
+      'Essa ação recriará e reativará as categorias padrão do app, sem apagar produtos ou compras já cadastrados.';
+  static const restoreDialogConfirm = 'Restaurar';
+
+  static const clearDialogTitle = 'Limpar todos os dados?';
+  static const clearDialogMessage =
+      'Essa ação apagará produtos, compras, itens e relatórios deste usuário. Essa ação não pode ser desfeita.';
+  static const clearDialogConfirm = 'Limpar dados';
+
+  static const logoutDialogTitle = 'Sair da conta?';
+  static const logoutDialogMessage =
+      'Sua sessão será encerrada e você voltará para a tela de login. Seus dados continuarão salvos.';
+  static const logoutDialogConfirm = 'Sair';
+}
+
 class SettingsView extends ConsumerStatefulWidget {
   const SettingsView({super.key});
 
@@ -81,14 +139,13 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                   ),
                   const SizedBox(height: 16),
                   _SettingsSection(
-                    title: 'Gerenciar dados locais',
+                    title: _SettingsTexts.localDataSection,
                     child: Column(
                       children: [
                         _SettingsActionCard(
                           icon: Icons.restart_alt_rounded,
-                          title: 'Restaurar categorias padrão',
-                          subtitle:
-                              'Reativa e recria as categorias principais do app sem apagar produtos ou compras.',
+                          title: _SettingsTexts.restoreCategoriesTitle,
+                          subtitle: _SettingsTexts.restoreCategoriesSubtitle,
                           foregroundColor: AppColors.primary,
                           backgroundColor: AppColors.primary.withValues(
                             alpha: 0.10,
@@ -103,9 +160,8 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                         const SizedBox(height: 12),
                         _SettingsActionCard(
                           icon: Icons.delete_forever_outlined,
-                          title: 'Limpar todos os dados',
-                          subtitle:
-                              'Apaga produtos, compras, itens e relatórios deste usuário.',
+                          title: _SettingsTexts.clearAllDataTitle,
+                          subtitle: _SettingsTexts.clearAllDataSubtitle,
                           foregroundColor: AppColors.danger,
                           backgroundColor: AppColors.danger.withValues(
                             alpha: 0.10,
@@ -121,14 +177,13 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                   ),
                   const SizedBox(height: 16),
                   _SettingsSection(
-                    title: 'Conta',
+                    title: _SettingsTexts.accountSection,
                     child: Column(
                       children: [
                         _SettingsActionCard(
                           icon: Icons.logout_rounded,
-                          title: 'Sair da conta',
-                          subtitle:
-                              'Encerra a sessão atual e volta para a tela de login. Seus dados continuam salvos.',
+                          title: _SettingsTexts.logoutTitle,
+                          subtitle: _SettingsTexts.logoutSubtitle,
                           foregroundColor: AppColors.danger,
                           backgroundColor: AppColors.danger.withValues(
                             alpha: 0.10,
@@ -144,27 +199,25 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                   ),
                   const SizedBox(height: 16),
                   const _SettingsSection(
-                    title: 'Sobre o app',
+                    title: _SettingsTexts.aboutSection,
                     child: Column(
                       children: [
                         _SettingsInfoTile(
                           icon: Icons.shopping_bag_outlined,
-                          title: 'Feira Mensal',
-                          subtitle:
-                              'Controle de compras de mercado, produtos, categorias e relatórios.',
+                          title: _SettingsTexts.appName,
+                          subtitle: _SettingsTexts.appDescription,
                         ),
                         SizedBox(height: 10),
                         _SettingsInfoTile(
                           icon: Icons.storage_rounded,
-                          title: 'Armazenamento',
-                          subtitle:
-                              'Os dados estão sendo salvos localmente por usuário neste dispositivo.',
+                          title: _SettingsTexts.storageTitle,
+                          subtitle: _SettingsTexts.storageDescription,
                         ),
                         SizedBox(height: 10),
                         _SettingsInfoTile(
                           icon: Icons.info_outline_rounded,
-                          title: 'Versão',
-                          subtitle: '1.0.0',
+                          title: _SettingsTexts.versionTitle,
+                          subtitle: _SettingsTexts.versionValue,
                         ),
                       ],
                     ),
@@ -223,10 +276,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
           _isConfirmingAction = false;
         });
 
-        _showFeedback(
-          message: 'Categorias padrão restauradas com sucesso.',
-          isError: false,
-        );
+        _showFeedback(message: _SettingsTexts.restoreSuccess, isError: false);
         break;
 
       case _SettingsConfirmationAction.clearAllData:
@@ -242,10 +292,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
           _isConfirmingAction = false;
         });
 
-        _showFeedback(
-          message: 'Todos os dados deste usuário foram apagados com sucesso.',
-          isError: false,
-        );
+        _showFeedback(message: _SettingsTexts.clearAllSuccess, isError: false);
         break;
 
       case _SettingsConfirmationAction.logout:
@@ -296,7 +343,7 @@ class _SettingsHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final subtitle = userName == null
-        ? 'Gerencie dados locais, preferências e informações do app.'
+        ? _SettingsTexts.defaultSubtitle
         : 'Olá, $userName. Gerencie sua conta e seus dados locais.';
 
     return Container(
@@ -310,7 +357,7 @@ class _SettingsHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Ajustes',
+            _SettingsTexts.title,
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
               fontSize: 26,
               fontWeight: FontWeight.w800,
@@ -365,7 +412,7 @@ class _CurrentUserCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Usuário conectado',
+                  _SettingsTexts.userConnected,
                   style: TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 11,
@@ -438,7 +485,7 @@ class _LocalStorageStatusCard extends StatelessWidget {
               SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Dados salvos localmente',
+                  _SettingsTexts.localDataTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -452,7 +499,8 @@ class _LocalStorageStatusCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           const Text(
-            'As informações permanecem salvas para este usuário mesmo ao atualizar ou fechar o app.',
+            _SettingsTexts.localDataSubtitle,
+            softWrap: true,
             style: TextStyle(
               color: AppColors.textSecondary,
               fontSize: 12,
@@ -518,6 +566,8 @@ class _SettingsSection extends StatelessWidget {
       children: [
         Text(
           title,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: Theme.of(
             context,
           ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
@@ -700,10 +750,14 @@ class _SettingsFeedback extends StatelessWidget {
           Expanded(
             child: Text(
               message,
+              softWrap: true,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: color,
                 fontSize: 12.5,
                 fontWeight: FontWeight.w800,
+                height: 1.3,
               ),
             ),
           ),
@@ -732,25 +786,27 @@ class _SettingsConfirmationOverlay extends StatelessWidget {
     final isLogout = action == _SettingsConfirmationAction.logout;
 
     final title = switch (action) {
-      _SettingsConfirmationAction.clearAllData => 'Limpar todos os dados?',
+      _SettingsConfirmationAction.clearAllData =>
+        _SettingsTexts.clearDialogTitle,
       _SettingsConfirmationAction.restoreDefaultCategories =>
-        'Restaurar categorias padrão?',
-      _SettingsConfirmationAction.logout => 'Sair da conta?',
+        _SettingsTexts.restoreDialogTitle,
+      _SettingsConfirmationAction.logout => _SettingsTexts.logoutDialogTitle,
     };
 
     final message = switch (action) {
       _SettingsConfirmationAction.clearAllData =>
-        'Essa ação apagará produtos, compras, itens e relatórios deste usuário. Essa ação não pode ser desfeita.',
+        _SettingsTexts.clearDialogMessage,
       _SettingsConfirmationAction.restoreDefaultCategories =>
-        'Essa ação recriará e reativará as categorias padrão do app, sem apagar produtos ou compras já cadastrados.',
-      _SettingsConfirmationAction.logout =>
-        'Sua sessão será encerrada e você voltará para a tela de login. Seus dados continuarão salvos.',
+        _SettingsTexts.restoreDialogMessage,
+      _SettingsConfirmationAction.logout => _SettingsTexts.logoutDialogMessage,
     };
 
     final confirmLabel = switch (action) {
-      _SettingsConfirmationAction.clearAllData => 'Limpar dados',
-      _SettingsConfirmationAction.restoreDefaultCategories => 'Restaurar',
-      _SettingsConfirmationAction.logout => 'Sair',
+      _SettingsConfirmationAction.clearAllData =>
+        _SettingsTexts.clearDialogConfirm,
+      _SettingsConfirmationAction.restoreDefaultCategories =>
+        _SettingsTexts.restoreDialogConfirm,
+      _SettingsConfirmationAction.logout => _SettingsTexts.logoutDialogConfirm,
     };
 
     final color = isClearAllData || isLogout
@@ -805,6 +861,8 @@ class _SettingsConfirmationOverlay extends StatelessWidget {
                     Text(
                       title,
                       textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: AppColors.textPrimary,
                         fontSize: 18,
@@ -815,6 +873,7 @@ class _SettingsConfirmationOverlay extends StatelessWidget {
                     Text(
                       message,
                       textAlign: TextAlign.center,
+                      softWrap: true,
                       style: const TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 12.5,
@@ -827,7 +886,7 @@ class _SettingsConfirmationOverlay extends StatelessWidget {
                         Expanded(
                           child: OutlinedButton(
                             onPressed: onCancel,
-                            child: const Text('Cancelar'),
+                            child: const Text(_SettingsTexts.cancel),
                           ),
                         ),
                         const SizedBox(width: 12),
