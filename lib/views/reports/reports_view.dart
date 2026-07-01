@@ -64,10 +64,21 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
     final purchasesState = ref.watch(purchasesProvider);
 
     final allRecords = _buildRecords(purchasesState.purchases);
+
+    final recordsForCategoryOptions = _filterRecordsForCategoryOptions(
+      allRecords,
+    );
+
+    final recordsForProductOptions = _filterRecordsForProductOptions(
+      allRecords,
+    );
+
     final filteredRecords = _filterRecords(allRecords);
+
     final periodOptions = _buildPeriodOptions(purchasesState.purchases);
-    final categoryOptions = _buildCategoryOptions(allRecords);
-    final productOptions = _buildProductOptions(allRecords);
+    final categoryOptions = _buildCategoryOptions(recordsForCategoryOptions);
+    final productOptions = _buildProductOptions(recordsForProductOptions);
+
     final insights = _buildInsights(filteredRecords);
     final groupResults = _buildGroups(filteredRecords);
 
@@ -112,11 +123,14 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
                       onPeriodChanged: (value) {
                         setState(() {
                           _selectedPeriod = value;
+                          _selectedCategoryId = _allFilterValue;
+                          _selectedProductId = _allFilterValue;
                         });
                       },
                       onCategoryChanged: (value) {
                         setState(() {
                           _selectedCategoryId = value;
+                          _selectedProductId = _allFilterValue;
                         });
                       },
                       onProductChanged: (value) {
@@ -196,6 +210,31 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
     });
 
     return records;
+  }
+
+  List<_ReportRecord> _filterRecordsForCategoryOptions(
+    List<_ReportRecord> records,
+  ) {
+    return records.where((record) {
+      return _selectedPeriod == _allFilterValue ||
+          _periodKey(record.purchaseDate) == _selectedPeriod;
+    }).toList();
+  }
+
+  List<_ReportRecord> _filterRecordsForProductOptions(
+    List<_ReportRecord> records,
+  ) {
+    return records.where((record) {
+      final periodMatches =
+          _selectedPeriod == _allFilterValue ||
+          _periodKey(record.purchaseDate) == _selectedPeriod;
+
+      final categoryMatches =
+          _selectedCategoryId == _allFilterValue ||
+          record.item.categoryId == _selectedCategoryId;
+
+      return periodMatches && categoryMatches;
+    }).toList();
   }
 
   List<_ReportRecord> _filterRecords(List<_ReportRecord> records) {
