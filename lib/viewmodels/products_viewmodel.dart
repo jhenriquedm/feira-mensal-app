@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../models/category_model.dart';
 import '../models/product_model.dart';
 import '../models/sync_status.dart';
+import '../services/firestore_sync_service.dart';
 import '../services/local_storage_service.dart';
 import 'auth_viewmodel.dart';
 
@@ -35,8 +36,6 @@ class ProductsState {
   final List<CategoryModel> categories;
   final List<ProductModel> products;
 
-  // Registros removidos ficam escondidos da interface,
-  // mas preservados para uma sincronização futura com Firestore.
   final List<CategoryModel> deletedCategories;
   final List<ProductModel> deletedProducts;
 
@@ -79,6 +78,9 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
   }
 
   final Uuid _uuid = const Uuid();
+
+  bool _isSyncing = false;
+  bool _syncAgainRequested = false;
 
   List<CategoryModel> get sortedCategories {
     final list = [...state.categories];
@@ -327,10 +329,63 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
   }
 
   void resetProductsAndCategories() {
+    final now = DateTime.now();
+    final defaultCategoryIds = defaultCategories.map((item) => item.id).toSet();
+
+    final deletedCategories = [
+      ...state.deletedCategories.where((category) {
+        return !defaultCategoryIds.contains(category.id);
+      }),
+      ...state.categories
+          .where((category) {
+            return !defaultCategoryIds.contains(category.id) &&
+                category.syncStatus != SyncStatus.pendingCreate;
+          })
+          .map((category) {
+            return _markCategoryAsDeleted(category, now);
+          }),
+    ];
+
+    final deletedProducts = [
+      ...state.deletedProducts,
+      ...state.products
+          .where((product) {
+            return product.syncStatus != SyncStatus.pendingCreate;
+          })
+          .map((product) {
+            return _markProductAsDeleted(product, now);
+          }),
+    ];
+
+    final categories = defaultCategories.map((defaultCategory) {
+      final existingCategory = _findCategoryById(defaultCategory.id);
+
+      if (existingCategory == null) {
+        return defaultCategory.copyWith(
+          createdAt: now,
+          updatedAt: now,
+          clearLastSyncedAt: true,
+          syncStatus: SyncStatus.pendingCreate,
+          isDeleted: false,
+        );
+      }
+
+      final restoredCategory = existingCategory.copyWith(
+        name: defaultCategory.name,
+        iconName: defaultCategory.iconName,
+        isActive: true,
+        isDeleted: false,
+      );
+
+      return _markCategoryAsUpdated(restoredCategory, now);
+    }).toList();
+
     _emitState(
       ProductsState(
-        categories: _preparedDefaultCategories(),
+        categories: categories,
         products: const [],
+        deletedCategories: deletedCategories,
+        deletedProducts: deletedProducts,
       ),
     );
   }
@@ -457,6 +512,8 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
       deletedCategories: List.unmodifiable(deletedCategories),
       deletedProducts: List.unmodifiable(deletedProducts),
     );
+
+    _trySyncProductsData();
   }
 
   void _emitState(ProductsState nextState) {
@@ -472,6 +529,7 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
     );
 
     _saveLocalData();
+    _trySyncProductsData();
   }
 
   void _saveLocalData() {
@@ -480,6 +538,72 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
       categories: state.allCategoriesForStorage,
       products: state.allProductsForStorage,
     );
+  }
+
+  Future<void> _trySyncProductsData() async {
+    if (userId.trim().isEmpty || userId == 'no_user') {
+      return;
+    }
+
+    if (_isSyncing) {
+      _syncAgainRequested = true;
+      return;
+    }
+
+    _isSyncing = true;
+
+    final categoriesSnapshot = state.allCategoriesForStorage;
+    final productsSnapshot = state.allProductsForStorage;
+
+    try {
+      final result = await FirestoreSyncService.syncProductsDataForUser(
+        userId: userId,
+        categories: categoriesSnapshot,
+        products: productsSnapshot,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (_syncAgainRequested) {
+        return;
+      }
+
+      final visibleCategories = result.categories
+          .where((category) => !category.isDeleted)
+          .toList();
+
+      final deletedCategories = result.categories
+          .where((category) => category.isDeleted)
+          .toList();
+
+      final visibleProducts = result.products
+          .where((product) => !product.isDeleted)
+          .toList();
+
+      final deletedProducts = result.products
+          .where((product) => product.isDeleted)
+          .toList();
+
+      state = ProductsState(
+        categories: List.unmodifiable(visibleCategories),
+        products: List.unmodifiable(visibleProducts),
+        deletedCategories: List.unmodifiable(deletedCategories),
+        deletedProducts: List.unmodifiable(deletedProducts),
+      );
+
+      _saveLocalData();
+    } catch (_) {
+      // Se estiver offline ou o Firestore falhar, mantemos tudo pendente localmente.
+    } finally {
+      _isSyncing = false;
+
+      if (_syncAgainRequested) {
+        _syncAgainRequested = false;
+        _trySyncProductsData();
+      }
+    }
   }
 
   CategoryModel? _findCategoryById(String id) {
@@ -510,7 +634,7 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
         createdAt: category.createdAt ?? now,
         updatedAt: category.updatedAt ?? now,
         clearLastSyncedAt: true,
-        syncStatus: category.syncStatus,
+        syncStatus: SyncStatus.pendingCreate,
         isDeleted: false,
       );
     }).toList();
