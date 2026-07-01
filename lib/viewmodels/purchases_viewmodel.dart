@@ -268,6 +268,10 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
       return false;
     }
 
+    if (quantity <= 0 || unitPrice <= 0) {
+      return false;
+    }
+
     if (productAlreadyAdded(purchaseId: purchaseId, productId: productId)) {
       return false;
     }
@@ -318,6 +322,10 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
     final purchase = findPurchaseById(purchaseId);
 
     if (purchase == null || purchase.isCompleted) {
+      return false;
+    }
+
+    if (quantity <= 0 || unitPrice <= 0) {
       return false;
     }
 

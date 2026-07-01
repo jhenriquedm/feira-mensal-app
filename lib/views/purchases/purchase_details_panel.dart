@@ -37,7 +37,7 @@ class _DetailsMessages {
   static const productRequiredForm =
       'Selecione um produto para adicionar à compra.';
   static const quantityInvalid = 'Informe uma quantidade maior que zero.';
-  static const unitPriceInvalid = 'Informe um preço unitário válido.';
+  static const unitPriceInvalid = 'Informe um preço unitário maior que zero.';
 
   static const noActiveProducts =
       'Cadastre produtos ativos antes de adicionar itens à compra.';
@@ -1513,7 +1513,7 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
       return;
     }
 
-    if (unitPrice == null || unitPrice < 0) {
+    if (unitPrice == null || unitPrice <= 0) {
       setState(() {
         _formError = _DetailsMessages.unitPriceInvalid;
       });
@@ -1797,7 +1797,7 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
                     validator: (value) {
                       final parsed = _parseCurrency(value ?? '');
 
-                      if (parsed == null || parsed < 0) {
+                      if (parsed == null || parsed <= 0) {
                         return 'Inválido';
                       }
 
