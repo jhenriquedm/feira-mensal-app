@@ -7,7 +7,6 @@ import '../../models/purchase_model.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/products_viewmodel.dart';
 import '../../viewmodels/purchases_viewmodel.dart';
-import '../../widgets/app_feature_card.dart';
 
 final NumberFormat _homeCurrencyFormatter = NumberFormat.currency(
   locale: 'pt_BR',
@@ -61,6 +60,7 @@ class HomeView extends ConsumerWidget {
         : currentMonthTotal / currentMonthPurchases.length;
 
     return Scaffold(
+      backgroundColor: AppColors.backgroundColor(context),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
@@ -92,24 +92,27 @@ class HomeView extends ConsumerWidget {
               const SizedBox(height: 28),
               Text(
                 'Acessos rápidos',
-                style: Theme.of(context).textTheme.titleLarge,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: AppColors.textPrimaryColor(context),
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               const SizedBox(height: 14),
-              AppFeatureCard(
+              _HomeFeatureCard(
                 title: 'Produtos',
                 subtitle: 'Cadastre e organize itens do mercado',
                 icon: Icons.shopping_basket_outlined,
                 onTap: onProductsTap ?? () {},
               ),
               const SizedBox(height: 12),
-              AppFeatureCard(
+              _HomeFeatureCard(
                 title: 'Compras',
                 subtitle: 'Registre sua feira mensal',
                 icon: Icons.receipt_long_outlined,
                 onTap: onPurchasesTap ?? () {},
               ),
               const SizedBox(height: 12),
-              AppFeatureCard(
+              _HomeFeatureCard(
                 title: 'Relatórios',
                 subtitle: 'Acompanhe gastos e evolução',
                 icon: Icons.bar_chart_rounded,
@@ -144,7 +147,9 @@ class HomeView extends ConsumerWidget {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.25),
+            color: AppColors.primary.withValues(
+              alpha: AppColors.isDark(context) ? 0.18 : 0.25,
+            ),
             blurRadius: 24,
             offset: const Offset(0, 12),
           ),
@@ -241,30 +246,33 @@ class HomeView extends ConsumerWidget {
     required int productsCount,
     required int categoriesCount,
   }) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
-        child: Row(
-          children: [
-            _summaryItem(
-              context,
-              title: 'Mês atual',
-              value: _homeCurrencyFormatter.format(currentMonthTotal),
-            ),
-            _divider(),
-            _summaryItem(
-              context,
-              title: 'Produtos',
-              value: productsCount.toString(),
-            ),
-            _divider(),
-            _summaryItem(
-              context,
-              title: 'Categorias',
-              value: categoriesCount.toString(),
-            ),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceColor(context),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.borderColor(context)),
+      ),
+      child: Row(
+        children: [
+          _summaryItem(
+            context,
+            title: 'Mês atual',
+            value: _homeCurrencyFormatter.format(currentMonthTotal),
+          ),
+          _divider(context),
+          _summaryItem(
+            context,
+            title: 'Produtos',
+            value: productsCount.toString(),
+          ),
+          _divider(context),
+          _summaryItem(
+            context,
+            title: 'Categorias',
+            value: categoriesCount.toString(),
+          ),
+        ],
       ),
     );
   }
@@ -280,7 +288,13 @@ class HomeView extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Resumo geral', style: Theme.of(context).textTheme.titleLarge),
+        Text(
+          'Resumo geral',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            color: AppColors.textPrimaryColor(context),
+            fontWeight: FontWeight.w900,
+          ),
+        ),
         const SizedBox(height: 14),
         Row(
           children: [
@@ -326,7 +340,7 @@ class HomeView extends ConsumerWidget {
                 subtitle: topCategory == null
                     ? 'Sem dados'
                     : _homeCurrencyFormatter.format(topCategory.total),
-                color: AppColors.textSecondary,
+                color: AppColors.secondary,
               ),
             ),
           ],
@@ -349,23 +363,31 @@ class HomeView extends ConsumerWidget {
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w900,
+              color: AppColors.textPrimaryColor(context),
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondaryColor(context),
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _divider() {
-    return Container(height: 38, width: 1, color: AppColors.border);
+  Widget _divider(BuildContext context) {
+    return Container(
+      height: 38,
+      width: 1,
+      color: AppColors.borderColor(context),
+    );
   }
 
   PurchaseModel? _latestPurchase(List<PurchaseModel> purchases) {
@@ -484,23 +506,33 @@ class _DashboardCard extends StatelessWidget {
       constraints: const BoxConstraints(minHeight: 118),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceColor(context),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 23),
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: color.withValues(
+                alpha: AppColors.isDark(context) ? 0.18 : 0.10,
+              ),
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Icon(icon, color: color, size: 21),
+          ),
           const SizedBox(height: 12),
           Text(
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              color: AppColors.textSecondaryColor(context),
               fontSize: 11.5,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 3),
@@ -519,8 +551,8 @@ class _DashboardCard extends StatelessWidget {
             subtitle,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              color: AppColors.textSecondaryColor(context),
               fontSize: 11,
             ),
           ),
@@ -543,9 +575,15 @@ class _LatestPurchaseCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.08),
+        color: AppColors.primary.withValues(
+          alpha: AppColors.isDark(context) ? 0.13 : 0.08,
+        ),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.18)),
+        border: Border.all(
+          color: AppColors.primary.withValues(
+            alpha: AppColors.isDark(context) ? 0.28 : 0.18,
+          ),
+        ),
       ),
       child: Row(
         children: [
@@ -553,7 +591,9 @@ class _LatestPurchaseCard extends StatelessWidget {
             width: 46,
             height: 46,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.12),
+              color: AppColors.primary.withValues(
+                alpha: AppColors.isDark(context) ? 0.18 : 0.12,
+              ),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
@@ -568,12 +608,12 @@ class _LatestPurchaseCard extends StatelessWidget {
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Última compra',
                         style: TextStyle(
-                          color: AppColors.textSecondary,
+                          color: AppColors.textSecondaryColor(context),
                           fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                       const SizedBox(height: 3),
@@ -581,8 +621,8 @@ class _LatestPurchaseCard extends StatelessWidget {
                         purchase!.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
+                        style: TextStyle(
+                          color: AppColors.textPrimaryColor(context),
                           fontSize: 15,
                           fontWeight: FontWeight.w900,
                         ),
@@ -592,38 +632,38 @@ class _LatestPurchaseCard extends StatelessWidget {
                         '${purchase!.market} • ${_homeCurrencyFormatter.format(purchase!.total)}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
+                        style: TextStyle(
+                          color: AppColors.textSecondaryColor(context),
                           fontSize: 11.5,
                         ),
                       ),
                     ],
                   )
-                : const Column(
+                : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Última compra',
                         style: TextStyle(
-                          color: AppColors.textSecondary,
+                          color: AppColors.textSecondaryColor(context),
                           fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                      SizedBox(height: 3),
+                      const SizedBox(height: 3),
                       Text(
                         'Nenhuma compra registrada',
                         style: TextStyle(
-                          color: AppColors.textPrimary,
+                          color: AppColors.textPrimaryColor(context),
                           fontSize: 15,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
-                      SizedBox(height: 3),
+                      const SizedBox(height: 3),
                       Text(
                         'Cadastre sua primeira compra para visualizar aqui.',
                         style: TextStyle(
-                          color: AppColors.textSecondary,
+                          color: AppColors.textSecondaryColor(context),
                           fontSize: 11.5,
                         ),
                       ),
@@ -631,6 +671,90 @@ class _LatestPurchaseCard extends StatelessWidget {
                   ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _HomeFeatureCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _HomeFeatureCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surfaceColor(context),
+      borderRadius: BorderRadius.circular(22),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(22),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: AppColors.borderColor(context)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: AppColors.primarySoftBackground(context),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(
+                  Icons.shopping_basket_outlined,
+                  color: AppColors.primary,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: AppColors.textPrimaryColor(context),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: AppColors.textSecondaryColor(context),
+                        fontSize: 12,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textSecondaryColor(context),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
