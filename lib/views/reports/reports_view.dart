@@ -39,6 +39,7 @@ class _ReportsTexts {
       'Altere os filtros para visualizar outros dados.';
 
   static const smartSummary = 'Resumo inteligente';
+  static const periodComparison = 'Comparativo entre períodos';
   static const totalByPurchase = 'Total por compra';
   static const totalByCategory = 'Total por categoria';
   static const totalByProduct = 'Total por produto';
@@ -80,6 +81,7 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
     final productOptions = _buildProductOptions(recordsForProductOptions);
 
     final insights = _buildInsights(filteredRecords);
+    final periodComparisons = _buildPeriodComparisons(filteredRecords);
     final groupResults = _buildGroups(filteredRecords);
 
     final headerPurchasesCount = filteredRecords
@@ -150,6 +152,8 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
                       _InsightsPanel(insights: insights),
                       const SizedBox(height: 18),
                       _MetricsGrid(records: filteredRecords),
+                      const SizedBox(height: 18),
+                      _PeriodComparisonSection(periods: periodComparisons),
                       const SizedBox(height: 18),
                       _GroupSelector(
                         selectedGroupType: _selectedGroupType,
@@ -405,6 +409,46 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
       mostExpensiveRecord: mostExpensiveRecord,
       mostPurchasedProduct: mostPurchasedProduct,
     );
+  }
+
+  List<_PeriodComparisonResult> _buildPeriodComparisons(
+    List<_ReportRecord> records,
+  ) {
+    final periods = <String, _PeriodComparisonAccumulator>{};
+
+    for (final record in records) {
+      final periodKey = _periodKey(record.purchaseDate);
+      final periodLabel = _periodLabel(record.purchaseDate);
+
+      final accumulator = periods.putIfAbsent(
+        periodKey,
+        () => _PeriodComparisonAccumulator(
+          periodKey: periodKey,
+          periodLabel: periodLabel,
+        ),
+      );
+
+      accumulator.add(record);
+    }
+
+    final chronologicalPeriods =
+        periods.values.map((period) => period.toResult()).toList()
+          ..sort((first, second) {
+            return first.periodKey.compareTo(second.periodKey);
+          });
+
+    final periodsWithVariation = <_PeriodComparisonResult>[];
+    _PeriodComparisonResult? previousPeriod;
+
+    for (final period in chronologicalPeriods) {
+      periodsWithVariation.add(
+        period.copyWith(previousTotal: previousPeriod?.total),
+      );
+
+      previousPeriod = period;
+    }
+
+    return periodsWithVariation.reversed.toList();
   }
 
   List<_ReportGroupResult> _buildGroups(List<_ReportRecord> records) {
@@ -1296,6 +1340,172 @@ class _MetricCard extends StatelessWidget {
   }
 }
 
+class _PeriodComparisonSection extends StatelessWidget {
+  final List<_PeriodComparisonResult> periods;
+
+  const _PeriodComparisonSection({required this.periods});
+
+  @override
+  Widget build(BuildContext context) {
+    return _ReportSection(
+      title: _ReportsTexts.periodComparison,
+      child: Column(
+        children: periods.map((period) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _PeriodComparisonCard(period: period),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _PeriodComparisonCard extends StatelessWidget {
+  final _PeriodComparisonResult period;
+
+  const _PeriodComparisonCard({required this.period});
+
+  @override
+  Widget build(BuildContext context) {
+    final itemsLabel = period.itemsCount == 1 ? 'item' : 'itens';
+    final purchasesLabel = period.purchasesCount == 1 ? 'compra' : 'compras';
+    final variationColor = _variationColor(period.variationType);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(19),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: variationColor.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  _variationIcon(period.variationType),
+                  color: variationColor,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      period.periodLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '${period.itemsCount} $itemsLabel • ${period.purchasesCount} $purchasesLabel',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  _reportCurrencyFormatter.format(period.total),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 11),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            decoration: BoxDecoration(
+              color: variationColor.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(color: variationColor.withValues(alpha: 0.22)),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  _variationIcon(period.variationType),
+                  color: variationColor,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    period.variationLabel,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: variationColor,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                      height: 1.25,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _variationColor(_PeriodVariationType type) {
+    switch (type) {
+      case _PeriodVariationType.increase:
+        return AppColors.danger;
+      case _PeriodVariationType.decrease:
+        return AppColors.success;
+      case _PeriodVariationType.neutral:
+        return AppColors.textSecondary;
+      case _PeriodVariationType.noPrevious:
+        return AppColors.primary;
+    }
+  }
+
+  IconData _variationIcon(_PeriodVariationType type) {
+    switch (type) {
+      case _PeriodVariationType.increase:
+        return Icons.trending_up_rounded;
+      case _PeriodVariationType.decrease:
+        return Icons.trending_down_rounded;
+      case _PeriodVariationType.neutral:
+        return Icons.trending_flat_rounded;
+      case _PeriodVariationType.noPrevious:
+        return Icons.calendar_month_outlined;
+    }
+  }
+}
+
 class _GroupSelector extends StatelessWidget {
   final _ReportGroupType selectedGroupType;
   final ValueChanged<_ReportGroupType> onChanged;
@@ -1803,6 +2013,114 @@ class _ReportGroupResult {
     required this.purchasesCount,
   });
 }
+
+class _PeriodComparisonAccumulator {
+  final String periodKey;
+  final String periodLabel;
+  final Set<String> purchaseIds = {};
+  double total = 0;
+  int itemsCount = 0;
+
+  _PeriodComparisonAccumulator({
+    required this.periodKey,
+    required this.periodLabel,
+  });
+
+  void add(_ReportRecord record) {
+    total += record.item.total;
+    itemsCount++;
+    purchaseIds.add(record.purchaseId);
+  }
+
+  _PeriodComparisonResult toResult() {
+    return _PeriodComparisonResult(
+      periodKey: periodKey,
+      periodLabel: periodLabel,
+      total: total,
+      itemsCount: itemsCount,
+      purchasesCount: purchaseIds.length,
+      previousTotal: null,
+    );
+  }
+}
+
+class _PeriodComparisonResult {
+  final String periodKey;
+  final String periodLabel;
+  final double total;
+  final int itemsCount;
+  final int purchasesCount;
+  final double? previousTotal;
+
+  const _PeriodComparisonResult({
+    required this.periodKey,
+    required this.periodLabel,
+    required this.total,
+    required this.itemsCount,
+    required this.purchasesCount,
+    required this.previousTotal,
+  });
+
+  _PeriodComparisonResult copyWith({double? previousTotal}) {
+    return _PeriodComparisonResult(
+      periodKey: periodKey,
+      periodLabel: periodLabel,
+      total: total,
+      itemsCount: itemsCount,
+      purchasesCount: purchasesCount,
+      previousTotal: previousTotal,
+    );
+  }
+
+  _PeriodVariationType get variationType {
+    final previous = previousTotal;
+
+    if (previous == null || previous <= 0) {
+      return _PeriodVariationType.noPrevious;
+    }
+
+    final difference = total - previous;
+
+    if (difference > 0) {
+      return _PeriodVariationType.increase;
+    }
+
+    if (difference < 0) {
+      return _PeriodVariationType.decrease;
+    }
+
+    return _PeriodVariationType.neutral;
+  }
+
+  String get variationLabel {
+    final previous = previousTotal;
+
+    if (previous == null) {
+      return 'Primeiro período analisado.';
+    }
+
+    if (previous <= 0) {
+      return 'Sem base anterior para comparação.';
+    }
+
+    final difference = total - previous;
+    final percent = (difference / previous) * 100;
+    final percentText = percent.abs().toStringAsFixed(2).replaceAll('.', ',');
+    final amountText = _reportCurrencyFormatter.format(difference.abs());
+
+    if (difference > 0) {
+      return 'Aumentou $percentText% em relação ao período anterior (+$amountText).';
+    }
+
+    if (difference < 0) {
+      return 'Diminuiu $percentText% em relação ao período anterior (-$amountText).';
+    }
+
+    return 'Sem variação em relação ao período anterior.';
+  }
+}
+
+enum _PeriodVariationType { increase, decrease, neutral, noPrevious }
 
 class _ProductQuantityAccumulator {
   final String title;
