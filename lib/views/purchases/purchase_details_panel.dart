@@ -19,6 +19,30 @@ final NumberFormat _detailsCurrencyFormatter = NumberFormat.currency(
 
 final DateFormat _detailsDateFormatter = DateFormat('dd/MM/yyyy');
 
+class _DetailsMessages {
+  static const purchaseCompleted = 'Compra finalizada com sucesso.';
+  static const purchaseReopened = 'Compra reaberta com sucesso.';
+  static const purchaseNotFound = 'Compra não encontrada.';
+
+  static const itemCreated = 'Item adicionado com sucesso.';
+  static const itemUpdated = 'Item atualizado com sucesso.';
+  static const itemDeleted = 'Item excluído com sucesso.';
+
+  static const itemDeleteFailed =
+      'Não foi possível excluir este item da compra.';
+  static const itemUpdateFailed = 'Não foi possível atualizar este item.';
+  static const itemDuplicate = 'Este produto já foi adicionado nesta compra.';
+
+  static const productRequired = 'Selecione um produto.';
+  static const productRequiredForm =
+      'Selecione um produto para adicionar à compra.';
+  static const quantityInvalid = 'Informe uma quantidade maior que zero.';
+  static const unitPriceInvalid = 'Informe um preço unitário válido.';
+
+  static const noActiveProducts =
+      'Cadastre produtos ativos antes de adicionar itens à compra.';
+}
+
 enum _PurchaseItemSortOption {
   name,
   highestValue,
@@ -208,14 +232,11 @@ class _PurchaseDetailsPanelState extends ConsumerState<PurchaseDetailsPanel> {
     });
 
     if (!success) {
-      _showLocalMessage(
-        'Não foi possível remover o item desta compra.',
-        isError: true,
-      );
+      _showLocalMessage(_DetailsMessages.itemDeleteFailed, isError: true);
       return;
     }
 
-    _showLocalMessage('Item removido com sucesso.');
+    _showLocalMessage(_DetailsMessages.itemDeleted);
   }
 
   void _togglePurchaseStatus(PurchaseModel purchase) {
@@ -223,12 +244,12 @@ class _PurchaseDetailsPanelState extends ConsumerState<PurchaseDetailsPanel> {
 
     if (purchase.isCompleted) {
       viewModel.reopenPurchase(purchase.id);
-      _showLocalMessage('Compra reaberta com sucesso.');
+      _showLocalMessage(_DetailsMessages.purchaseReopened);
       return;
     }
 
     viewModel.completePurchase(purchase.id);
-    _showLocalMessage('Compra finalizada com sucesso.');
+    _showLocalMessage(_DetailsMessages.purchaseCompleted);
   }
 
   void _clearItemSearch() {
@@ -1105,10 +1126,14 @@ class _DetailsFeedbackMessage extends StatelessWidget {
           Expanded(
             child: Text(
               message,
+              softWrap: true,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: color,
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
+                height: 1.3,
               ),
             ),
           ),
@@ -1473,7 +1498,7 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
 
     if (selectedProduct == null) {
       setState(() {
-        _formError = 'Selecione um produto para adicionar à compra.';
+        _formError = _DetailsMessages.productRequiredForm;
       });
       return;
     }
@@ -1483,14 +1508,14 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
 
     if (quantity == null || quantity <= 0) {
       setState(() {
-        _formError = 'Informe uma quantidade maior que zero.';
+        _formError = _DetailsMessages.quantityInvalid;
       });
       return;
     }
 
     if (unitPrice == null || unitPrice < 0) {
       setState(() {
-        _formError = 'Informe um preço unitário válido.';
+        _formError = _DetailsMessages.unitPriceInvalid;
       });
       return;
     }
@@ -1537,16 +1562,14 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
     if (!success) {
       widget.onError(
         isEditing
-            ? 'Não foi possível atualizar o item.'
-            : 'Este produto já foi adicionado nesta compra.',
+            ? _DetailsMessages.itemUpdateFailed
+            : _DetailsMessages.itemDuplicate,
       );
       return;
     }
 
     widget.onSaved(
-      isEditing
-          ? 'Item atualizado com sucesso.'
-          : 'Item adicionado com sucesso.',
+      isEditing ? _DetailsMessages.itemUpdated : _DetailsMessages.itemCreated,
     );
   }
 
@@ -1599,7 +1622,7 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
               initialValue: _selectedProduct,
               validator: (value) {
                 if (_selectedProduct == null) {
-                  return 'Selecione um produto';
+                  return _DetailsMessages.productRequired;
                 }
 
                 return null;
@@ -1832,10 +1855,14 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
                 ),
                 child: Text(
                   _formError!,
+                  softWrap: true,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: AppColors.danger,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
+                    height: 1.3,
                   ),
                 ),
               ),
@@ -2074,11 +2101,15 @@ class _NoProductsWarning extends StatelessWidget {
         border: Border.all(color: AppColors.warning.withValues(alpha: 0.30)),
       ),
       child: const Text(
-        'Cadastre produtos ativos antes de adicionar itens à compra.',
+        _DetailsMessages.noActiveProducts,
+        softWrap: true,
+        maxLines: 3,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: AppColors.warning,
           fontSize: 12,
           fontWeight: FontWeight.w700,
+          height: 1.3,
         ),
       ),
     );
@@ -2197,7 +2228,7 @@ class _PurchaseNotFoundState extends StatelessWidget {
     return const Padding(
       padding: EdgeInsets.all(22),
       child: Text(
-        'Compra não encontrada.',
+        _DetailsMessages.purchaseNotFound,
         textAlign: TextAlign.center,
         style: TextStyle(
           color: AppColors.textSecondary,
