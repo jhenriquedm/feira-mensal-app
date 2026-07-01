@@ -1,4 +1,5 @@
 import 'purchase_item_model.dart';
+import 'sync_status.dart';
 
 enum PurchaseType { monthly, weekly, emergency, butcher, pharmacy, other }
 
@@ -44,6 +45,12 @@ class PurchaseModel {
   final PurchaseStatus status;
   final List<PurchaseItemModel> items;
 
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+  final DateTime? lastSyncedAt;
+  final SyncStatus syncStatus;
+  final bool isDeleted;
+
   const PurchaseModel({
     required this.id,
     required this.name,
@@ -53,6 +60,11 @@ class PurchaseModel {
     required this.status,
     required this.items,
     this.notes,
+    this.createdAt,
+    this.updatedAt,
+    this.lastSyncedAt,
+    this.syncStatus = SyncStatus.pendingCreate,
+    this.isDeleted = false,
   });
 
   double get total {
@@ -77,6 +89,12 @@ class PurchaseModel {
     bool clearNotes = false,
     PurchaseStatus? status,
     List<PurchaseItemModel>? items,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    DateTime? lastSyncedAt,
+    bool clearLastSyncedAt = false,
+    SyncStatus? syncStatus,
+    bool? isDeleted,
   }) {
     return PurchaseModel(
       id: id ?? this.id,
@@ -87,6 +105,13 @@ class PurchaseModel {
       notes: clearNotes ? null : notes ?? this.notes,
       status: status ?? this.status,
       items: items ?? this.items,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      lastSyncedAt: clearLastSyncedAt
+          ? null
+          : lastSyncedAt ?? this.lastSyncedAt,
+      syncStatus: syncStatus ?? this.syncStatus,
+      isDeleted: isDeleted ?? this.isDeleted,
     );
   }
 
@@ -100,6 +125,11 @@ class PurchaseModel {
       'notes': notes,
       'status': status.name,
       'items': items.map((item) => item.toMap()).toList(),
+      'createdAt': createdAt?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
+      'lastSyncedAt': lastSyncedAt?.toIso8601String(),
+      'syncStatus': syncStatus.name,
+      'isDeleted': isDeleted,
     };
   }
 
@@ -117,6 +147,11 @@ class PurchaseModel {
           Map<String, dynamic>.from(item as Map),
         );
       }).toList(),
+      createdAt: DateTime.tryParse(map['createdAt'] as String? ?? ''),
+      updatedAt: DateTime.tryParse(map['updatedAt'] as String? ?? ''),
+      lastSyncedAt: DateTime.tryParse(map['lastSyncedAt'] as String? ?? ''),
+      syncStatus: parseSyncStatus(map['syncStatus'] as String?),
+      isDeleted: map['isDeleted'] as bool? ?? false,
     );
   }
 
