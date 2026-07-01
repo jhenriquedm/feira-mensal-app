@@ -1,7 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
 
 import '../models/app_user_model.dart';
+import '../models/offline_session_model.dart';
 import '../services/local_storage_service.dart';
 
 final authProvider = StateNotifierProvider<AuthViewModel, AuthState>((ref) {
@@ -12,11 +13,15 @@ class AuthState {
   final List<AppUserModel> users;
   final AppUserModel? currentUser;
   final bool isLoading;
+  final bool isOfflineMode;
+  final OfflineSessionModel? offlineSession;
 
   const AuthState({
     required this.users,
     required this.currentUser,
     required this.isLoading,
+    this.isOfflineMode = false,
+    this.offlineSession,
   });
 
   bool get isAuthenticated => currentUser != null;
@@ -26,11 +31,20 @@ class AuthState {
     AppUserModel? currentUser,
     bool clearCurrentUser = false,
     bool? isLoading,
+    bool? isOfflineMode,
+    OfflineSessionModel? offlineSession,
+    bool clearOfflineSession = false,
   }) {
     return AuthState(
       users: users ?? this.users,
       currentUser: clearCurrentUser ? null : currentUser ?? this.currentUser,
       isLoading: isLoading ?? this.isLoading,
+      isOfflineMode: clearCurrentUser
+          ? false
+          : isOfflineMode ?? this.isOfflineMode,
+      offlineSession: clearCurrentUser || clearOfflineSession
+          ? null
+          : offlineSession ?? this.offlineSession,
     );
   }
 }
@@ -41,7 +55,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
     _loadSession();
   }
 
-  final Uuid _uuid = const Uuid();
+  FirebaseAuth get _firebaseAuth => FirebaseAuth.instance;
 
   Future<String?> register({
     required String name,
@@ -65,32 +79,36 @@ class AuthViewModel extends StateNotifier<AuthState> {
       return validationMessage;
     }
 
-    final emailAlreadyExists = state.users.any((user) {
-      return user.email.trim().toLowerCase() == cleanedEmail;
-    });
+    try {
+      final credential = await _firebaseAuth.createUserWithEmailAndPassword(
+        email: cleanedEmail,
+        password: cleanedPassword,
+      );
 
-    if (emailAlreadyExists) {
-      return 'Este e-mail já está cadastrado.';
+      await credential.user?.updateDisplayName(cleanedName);
+      await credential.user?.reload();
+
+      // O Firebase faz login automaticamente após criar a conta.
+      // Mantemos o fluxo atual do app: cadastro concluído e retorno para tela de login.
+      await _firebaseAuth.signOut();
+
+      if (!mounted) {
+        return null;
+      }
+
+      state = state.copyWith(
+        users: const [],
+        clearCurrentUser: true,
+        clearOfflineSession: true,
+        isLoading: false,
+      );
+
+      return null;
+    } on FirebaseAuthException catch (error) {
+      return _mapFirebaseAuthError(error);
+    } catch (_) {
+      return 'Não foi possível criar a conta. Verifique sua conexão e tente novamente.';
     }
-
-    final user = AppUserModel(
-      id: _uuid.v4(),
-      name: cleanedName,
-      email: cleanedEmail,
-      password: cleanedPassword,
-      createdAt: DateTime.now(),
-    );
-
-    final updatedUsers = [...state.users, user];
-
-    state = state.copyWith(
-      users: List.unmodifiable(updatedUsers),
-      clearCurrentUser: true,
-    );
-
-    await LocalStorageService.saveUsers(updatedUsers);
-
-    return null;
   }
 
   Future<String?> login({
@@ -109,62 +127,216 @@ class AuthViewModel extends StateNotifier<AuthState> {
       return validationMessage;
     }
 
-    AppUserModel? foundUser;
+    try {
+      final credential = await _firebaseAuth.signInWithEmailAndPassword(
+        email: cleanedEmail,
+        password: cleanedPassword,
+      );
 
-    for (final user in state.users) {
-      final sameEmail = user.email.trim().toLowerCase() == cleanedEmail;
-      final samePassword = user.password == cleanedPassword;
+      final user = credential.user;
 
-      if (sameEmail && samePassword) {
-        foundUser = user;
-        break;
+      if (user == null) {
+        return 'Não foi possível acessar a conta. Tente novamente.';
+      }
+
+      await user.reload();
+
+      final refreshedUser = _firebaseAuth.currentUser ?? user;
+      final appUser = _mapFirebaseUser(refreshedUser);
+      final offlineSession = await _buildOfflineSession(appUser);
+
+      await LocalStorageService.saveOfflineSession(offlineSession);
+
+      if (!mounted) {
+        return null;
+      }
+
+      state = state.copyWith(
+        users: const [],
+        currentUser: appUser,
+        isLoading: false,
+        isOfflineMode: false,
+        offlineSession: offlineSession,
+      );
+
+      return null;
+    } on FirebaseAuthException catch (error) {
+      if (error.code == 'network-request-failed') {
+        return _loginWithOfflineSession(cleanedEmail);
+      }
+
+      return _mapFirebaseAuthError(error);
+    } catch (_) {
+      return _loginWithOfflineSession(cleanedEmail);
+    }
+  }
+
+  Future<void> logout() async {
+    try {
+      await _firebaseAuth.signOut();
+    } catch (_) {
+      // Mesmo sem conexão, encerramos a sessão offline do app.
+    }
+
+    await LocalStorageService.clearOfflineSession();
+
+    if (!mounted) {
+      return;
+    }
+
+    state = state.copyWith(
+      users: const [],
+      clearCurrentUser: true,
+      clearOfflineSession: true,
+      isLoading: false,
+      isOfflineMode: false,
+    );
+  }
+
+  Future<void> _loadSession() async {
+    try {
+      final firebaseUser = _firebaseAuth.currentUser;
+
+      if (firebaseUser != null) {
+        await firebaseUser.reload();
+
+        final refreshedUser = _firebaseAuth.currentUser ?? firebaseUser;
+        final appUser = _mapFirebaseUser(refreshedUser);
+        final offlineSession = await _buildOfflineSession(appUser);
+
+        await LocalStorageService.saveOfflineSession(offlineSession);
+
+        if (!mounted) {
+          return;
+        }
+
+        state = AuthState(
+          users: const [],
+          currentUser: appUser,
+          isLoading: false,
+          isOfflineMode: false,
+          offlineSession: offlineSession,
+        );
+
+        return;
+      }
+
+      final loadedOffline = await _loadOfflineSessionIntoState();
+
+      if (!loadedOffline && mounted) {
+        state = const AuthState(users: [], currentUser: null, isLoading: false);
+      }
+    } catch (_) {
+      final loadedOffline = await _loadOfflineSessionIntoState();
+
+      if (!loadedOffline && mounted) {
+        state = const AuthState(users: [], currentUser: null, isLoading: false);
       }
     }
+  }
 
-    if (foundUser == null) {
-      return 'E-mail ou senha inválidos.';
+  Future<String?> _loginWithOfflineSession(String email) async {
+    final offlineSession = await LocalStorageService.loadOfflineSession();
+
+    if (offlineSession == null ||
+        !offlineSession.canUseOffline ||
+        offlineSession.userId.trim().isEmpty) {
+      return 'Sem conexão. Faça o primeiro login online antes de usar o app offline.';
     }
 
-    state = state.copyWith(currentUser: foundUser);
+    if (offlineSession.email.trim().toLowerCase() != email) {
+      return 'Sem conexão. Esta conta ainda não está liberada para acesso offline neste dispositivo.';
+    }
 
-    await LocalStorageService.saveCurrentUserId(foundUser.id);
+    final updatedSession = offlineSession.copyWith(
+      lastAccessAt: DateTime.now(),
+    );
+
+    await LocalStorageService.saveOfflineSession(updatedSession);
+
+    if (!mounted) {
+      return null;
+    }
+
+    state = state.copyWith(
+      users: const [],
+      currentUser: updatedSession.toAppUser(),
+      isLoading: false,
+      isOfflineMode: true,
+      offlineSession: updatedSession,
+    );
 
     return null;
   }
 
-  Future<void> logout() async {
-    await LocalStorageService.clearCurrentUserSession();
+  Future<bool> _loadOfflineSessionIntoState() async {
+    final offlineSession = await LocalStorageService.loadOfflineSession();
 
-    if (!mounted) {
-      return;
+    if (offlineSession == null ||
+        !offlineSession.canUseOffline ||
+        offlineSession.userId.trim().isEmpty) {
+      return false;
     }
 
-    state = state.copyWith(clearCurrentUser: true);
-  }
+    final updatedSession = offlineSession.copyWith(
+      lastAccessAt: DateTime.now(),
+    );
 
-  Future<void> _loadSession() async {
-    final users = await LocalStorageService.loadUsers();
-    final currentUserId = await LocalStorageService.loadCurrentUserId();
-
-    AppUserModel? currentUser;
-
-    if (currentUserId != null) {
-      for (final user in users) {
-        if (user.id == currentUserId) {
-          currentUser = user;
-          break;
-        }
-      }
-    }
+    await LocalStorageService.saveOfflineSession(updatedSession);
 
     if (!mounted) {
-      return;
+      return true;
     }
 
     state = AuthState(
-      users: List.unmodifiable(users),
-      currentUser: currentUser,
+      users: const [],
+      currentUser: updatedSession.toAppUser(),
       isLoading: false,
+      isOfflineMode: true,
+      offlineSession: updatedSession,
+    );
+
+    return true;
+  }
+
+  Future<OfflineSessionModel> _buildOfflineSession(AppUserModel appUser) async {
+    final existingSession = await LocalStorageService.loadOfflineSession();
+    final now = DateTime.now();
+
+    final firstOnlineLoginAt =
+        existingSession != null && existingSession.userId == appUser.id
+        ? existingSession.firstOnlineLoginAt
+        : now;
+
+    return OfflineSessionModel(
+      userId: appUser.id,
+      name: appUser.name,
+      email: appUser.email,
+      firstOnlineLoginAt: firstOnlineLoginAt,
+      lastOnlineLoginAt: now,
+      lastAccessAt: now,
+      canUseOffline: true,
+    );
+  }
+
+  AppUserModel _mapFirebaseUser(User user) {
+    final email = user.email?.trim().toLowerCase() ?? '';
+
+    final fallbackName = email.contains('@')
+        ? email.split('@').first
+        : 'Usuário';
+
+    final displayName = user.displayName?.trim();
+
+    final name = displayName != null && displayName.isNotEmpty
+        ? displayName
+        : fallbackName;
+
+    return AppUserModel(
+      id: user.uid,
+      name: name,
+      email: email,
+      createdAt: user.metadata.creationTime ?? DateTime.now(),
     );
   }
 
@@ -218,6 +390,31 @@ class AuthViewModel extends StateNotifier<AuthState> {
     }
 
     return null;
+  }
+
+  String _mapFirebaseAuthError(FirebaseAuthException error) {
+    switch (error.code) {
+      case 'email-already-in-use':
+        return 'Este e-mail já está cadastrado.';
+      case 'invalid-email':
+        return 'Informe um e-mail válido.';
+      case 'weak-password':
+        return 'A senha informada é muito fraca.';
+      case 'user-disabled':
+        return 'Esta conta foi desativada.';
+      case 'user-not-found':
+      case 'wrong-password':
+      case 'invalid-credential':
+        return 'E-mail ou senha inválidos.';
+      case 'operation-not-allowed':
+        return 'O login por e-mail e senha ainda não está ativado no Firebase.';
+      case 'too-many-requests':
+        return 'Muitas tentativas realizadas. Aguarde um momento e tente novamente.';
+      case 'network-request-failed':
+        return 'Sem conexão. Faça o primeiro login online antes de usar o app offline.';
+      default:
+        return 'Não foi possível concluir a autenticação. Tente novamente.';
+    }
   }
 
   bool _isValidEmail(String value) {

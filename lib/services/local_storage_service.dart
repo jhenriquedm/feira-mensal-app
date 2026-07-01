@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/app_user_model.dart';
 import '../models/category_model.dart';
+import '../models/offline_session_model.dart';
 import '../models/product_model.dart';
 import '../models/purchase_model.dart';
 
@@ -21,6 +22,7 @@ class LocalStorageService {
 
   static const String _usersKey = 'feira_mensal_users_v1';
   static const String _currentUserIdKey = 'feira_mensal_current_user_id_v1';
+  static const String _offlineSessionKey = 'feira_mensal_offline_session_v1';
 
   static String _userScopedKey({
     required String baseKey,
@@ -95,7 +97,7 @@ class LocalStorageService {
         productsJson,
       );
     } catch (_) {
-      // Evita quebrar testes ou execução caso o storage local falhe.
+      // Evita quebrar testes ou execução caso o storage falhe.
     }
   }
 
@@ -137,7 +139,7 @@ class LocalStorageService {
         purchasesJson,
       );
     } catch (_) {
-      // Evita quebrar testes ou execução caso o storage local falhe.
+      // Evita quebrar testes ou execução caso o storage falhe.
     }
   }
 
@@ -166,7 +168,7 @@ class LocalStorageService {
 
       await prefs.setString(_usersKey, usersJson);
     } catch (_) {
-      // Evita quebrar testes ou execução caso o storage local falhe.
+      // Evita quebrar testes ou execução caso o storage falhe.
     }
   }
 
@@ -186,7 +188,7 @@ class LocalStorageService {
 
       await prefs.setString(_currentUserIdKey, userId);
     } catch (_) {
-      // Evita quebrar testes ou execução caso o storage local falhe.
+      // Evita quebrar testes ou execução caso o storage falhe.
     }
   }
 
@@ -196,7 +198,46 @@ class LocalStorageService {
 
       await prefs.remove(_currentUserIdKey);
     } catch (_) {
-      // Evita quebrar testes ou execução caso o storage local falhe.
+      // Evita quebrar testes ou execução caso o storage falhe.
+    }
+  }
+
+  static Future<OfflineSessionModel?> loadOfflineSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final sessionJson = prefs.getString(_offlineSessionKey);
+
+      if (sessionJson == null) {
+        return null;
+      }
+
+      return OfflineSessionModel.fromMap(
+        Map<String, dynamic>.from(jsonDecode(sessionJson) as Map),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<void> saveOfflineSession(OfflineSessionModel session) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      await prefs.setString(_offlineSessionKey, jsonEncode(session.toMap()));
+      await prefs.setString(_currentUserIdKey, session.userId);
+    } catch (_) {
+      // Evita quebrar testes ou execução caso o storage falhe.
+    }
+  }
+
+  static Future<void> clearOfflineSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      await prefs.remove(_offlineSessionKey);
+      await prefs.remove(_currentUserIdKey);
+    } catch (_) {
+      // Evita quebrar testes ou execução caso o storage falhe.
     }
   }
 }
