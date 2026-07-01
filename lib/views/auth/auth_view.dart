@@ -140,7 +140,7 @@ class _AuthViewState extends ConsumerState<AuthView> {
 
     final subtitle = _isRegisterMode
         ? 'Cadastre-se para organizar suas compras mensais.'
-        : 'Acesse sua feira mensal salva neste dispositivo.';
+        : 'Acesse sua conta para organizar suas compras.';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -169,12 +169,10 @@ class _AuthViewState extends ConsumerState<AuthView> {
                             ),
                     ),
                     if (_feedbackMessage != null) const SizedBox(height: 14),
-
                     if (!_isRegisterMode) ...[
                       const _AuthBenefitsCard(),
                       const SizedBox(height: 16),
                     ],
-
                     _AuthFormPanel(
                       formKey: _formKey,
                       isRegisterMode: _isRegisterMode,
@@ -203,7 +201,7 @@ class _AuthViewState extends ConsumerState<AuthView> {
                       onTap: _toggleMode,
                     ),
                     const SizedBox(height: 18),
-                    const _AuthSecurityNote(),
+                    const _AuthAccountNote(),
                   ],
                 ),
               ),
@@ -284,7 +282,7 @@ class _AuthTopHeader extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  isRegisterMode ? 'Novo acesso' : 'Acesso local',
+                  isRegisterMode ? 'Novo cadastro' : 'Acesso seguro',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 11,
@@ -648,10 +646,14 @@ class _AuthFeedbackMessage extends StatelessWidget {
           Expanded(
             child: Text(
               message,
+              softWrap: true,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: color,
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
+                height: 1.3,
               ),
             ),
           ),
@@ -835,8 +837,8 @@ class _BenefitItem extends StatelessWidget {
   }
 }
 
-class _AuthSecurityNote extends StatelessWidget {
-  const _AuthSecurityNote();
+class _AuthAccountNote extends StatelessWidget {
+  const _AuthAccountNote();
 
   @override
   Widget build(BuildContext context) {
@@ -855,7 +857,7 @@ class _AuthSecurityNote extends StatelessWidget {
           SizedBox(width: 9),
           Expanded(
             child: Text(
-              'Seus dados ficam salvos localmente neste dispositivo.',
+              'Seus dados ficam vinculados à sua conta.',
               style: TextStyle(
                 color: AppColors.textSecondary,
                 fontSize: 11.5,

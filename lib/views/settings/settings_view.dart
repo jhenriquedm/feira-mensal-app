@@ -11,42 +11,42 @@ import '../../viewmodels/purchases_viewmodel.dart';
 class _SettingsTexts {
   static const title = 'Ajustes';
   static const defaultSubtitle =
-      'Gerencie dados locais, preferências e informações do app.';
+      'Gerencie sua conta, preferências e informações do app.';
 
   static const userConnected = 'Usuário conectado';
-  static const localDataTitle = 'Dados salvos localmente';
-  static const localDataSubtitle =
-      'As informações permanecem salvas para este usuário mesmo ao atualizar ou fechar o app.';
+  static const accountSummaryTitle = 'Resumo da conta';
+  static const accountSummarySubtitle =
+      'Acompanhe os dados cadastrados e gerencie suas informações.';
 
-  static const localDataSection = 'Gerenciar dados locais';
+  static const accountDataSection = 'Dados da conta';
   static const restoreCategoriesTitle = 'Restaurar categorias padrão';
   static const restoreCategoriesSubtitle =
       'Reativa e recria as categorias principais do app sem apagar produtos ou compras.';
 
   static const clearAllDataTitle = 'Limpar todos os dados';
   static const clearAllDataSubtitle =
-      'Apaga produtos, compras, itens e relatórios deste usuário.';
+      'Apaga produtos, compras, itens e relatórios desta conta.';
 
   static const accountSection = 'Conta';
   static const logoutTitle = 'Sair da conta';
   static const logoutSubtitle =
-      'Encerra a sessão atual e volta para a tela de login. Seus dados continuam salvos.';
+      'Encerra a sessão atual e volta para a tela de login. Seus dados continuam preservados.';
 
   static const aboutSection = 'Sobre o app';
   static const appName = 'Feira Mensal';
   static const appDescription =
       'Controle de compras de mercado, produtos, categorias e relatórios.';
 
-  static const storageTitle = 'Armazenamento';
-  static const storageDescription =
-      'Os dados estão sendo salvos localmente por usuário neste dispositivo.';
+  static const organizationTitle = 'Organização';
+  static const organizationDescription =
+      'Produtos, compras e relatórios ficam separados por conta.';
 
   static const versionTitle = 'Versão';
   static const versionValue = '1.0.0';
 
   static const restoreSuccess = 'Categorias padrão restauradas com sucesso.';
   static const clearAllSuccess =
-      'Todos os dados deste usuário foram apagados com sucesso.';
+      'Todos os dados desta conta foram apagados com sucesso.';
 
   static const cancel = 'Cancelar';
 
@@ -57,12 +57,12 @@ class _SettingsTexts {
 
   static const clearDialogTitle = 'Limpar todos os dados?';
   static const clearDialogMessage =
-      'Essa ação apagará produtos, compras, itens e relatórios deste usuário. Essa ação não pode ser desfeita.';
+      'Essa ação apagará produtos, compras, itens e relatórios desta conta. Essa ação não pode ser desfeita.';
   static const clearDialogConfirm = 'Limpar dados';
 
   static const logoutDialogTitle = 'Sair da conta?';
   static const logoutDialogMessage =
-      'Sua sessão será encerrada e você voltará para a tela de login. Seus dados continuarão salvos.';
+      'Sua sessão será encerrada e você voltará para a tela de login. Seus dados continuarão preservados.';
   static const logoutDialogConfirm = 'Sair';
 }
 
@@ -131,7 +131,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                     ),
                     const SizedBox(height: 16),
                   ],
-                  _LocalStorageStatusCard(
+                  _AccountSummaryCard(
                     categoriesCount: categoriesCount,
                     productsCount: productsCount,
                     purchasesCount: purchasesCount,
@@ -139,7 +139,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                   ),
                   const SizedBox(height: 16),
                   _SettingsSection(
-                    title: _SettingsTexts.localDataSection,
+                    title: _SettingsTexts.accountDataSection,
                     child: Column(
                       children: [
                         _SettingsActionCard(
@@ -209,9 +209,9 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                         ),
                         SizedBox(height: 10),
                         _SettingsInfoTile(
-                          icon: Icons.storage_rounded,
-                          title: _SettingsTexts.storageTitle,
-                          subtitle: _SettingsTexts.storageDescription,
+                          icon: Icons.account_tree_outlined,
+                          title: _SettingsTexts.organizationTitle,
+                          subtitle: _SettingsTexts.organizationDescription,
                         ),
                         SizedBox(height: 10),
                         _SettingsInfoTile(
@@ -344,7 +344,7 @@ class _SettingsHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final subtitle = userName == null
         ? _SettingsTexts.defaultSubtitle
-        : 'Olá, $userName. Gerencie sua conta e seus dados locais.';
+        : 'Olá, $userName. Gerencie sua conta e preferências.';
 
     return Container(
       width: double.infinity,
@@ -450,13 +450,13 @@ class _CurrentUserCard extends StatelessWidget {
   }
 }
 
-class _LocalStorageStatusCard extends StatelessWidget {
+class _AccountSummaryCard extends StatelessWidget {
   final int categoriesCount;
   final int productsCount;
   final int purchasesCount;
   final int itemsCount;
 
-  const _LocalStorageStatusCard({
+  const _AccountSummaryCard({
     required this.categoriesCount,
     required this.productsCount,
     required this.purchasesCount,
@@ -478,14 +478,14 @@ class _LocalStorageStatusCard extends StatelessWidget {
           const Row(
             children: [
               Icon(
-                Icons.cloud_done_outlined,
+                Icons.dashboard_customize_outlined,
                 color: AppColors.primary,
                 size: 22,
               ),
               SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  _SettingsTexts.localDataTitle,
+                  _SettingsTexts.accountSummaryTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -499,7 +499,7 @@ class _LocalStorageStatusCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           const Text(
-            _SettingsTexts.localDataSubtitle,
+            _SettingsTexts.accountSummarySubtitle,
             softWrap: true,
             style: TextStyle(
               color: AppColors.textSecondary,
