@@ -71,7 +71,14 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
     final insights = _buildInsights(filteredRecords);
     final groupResults = _buildGroups(filteredRecords);
 
-    final totalAmount = allRecords.fold<double>(
+    final headerPurchasesCount = filteredRecords
+        .map((record) => record.purchaseId)
+        .toSet()
+        .length;
+
+    final headerRecordsCount = filteredRecords.length;
+
+    final headerTotalAmount = filteredRecords.fold<double>(
       0,
       (sum, record) => sum + record.item.total,
     );
@@ -84,9 +91,9 @@ class _ReportsViewState extends ConsumerState<ReportsView> {
     return Column(
       children: [
         _ReportsHeader(
-          totalPurchases: purchasesState.purchases.length,
-          totalRecords: allRecords.length,
-          totalAmount: totalAmount,
+          totalPurchases: headerPurchasesCount,
+          totalRecords: headerRecordsCount,
+          totalAmount: headerTotalAmount,
         ),
         Expanded(
           child: allRecords.isEmpty
@@ -587,7 +594,7 @@ class _ReportsHeader extends StatelessWidget {
               Expanded(
                 child: _HeaderInfoCard(
                   icon: Icons.receipt_long_rounded,
-                  title: 'Compras',
+                  title: 'Compras analisadas',
                   value: totalPurchases.toString(),
                   foregroundColor: AppColors.primary,
                   backgroundColor: AppColors.primary.withValues(alpha: 0.10),
@@ -597,7 +604,7 @@ class _ReportsHeader extends StatelessWidget {
               Expanded(
                 child: _HeaderInfoCard(
                   icon: Icons.inventory_2_outlined,
-                  title: 'Itens registrados',
+                  title: 'Itens encontrados',
                   value: totalRecords.toString(),
                   foregroundColor: AppColors.success,
                   backgroundColor: AppColors.success.withValues(alpha: 0.10),
