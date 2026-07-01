@@ -344,7 +344,7 @@ class _PurchasesViewState extends ConsumerState<PurchasesView> {
         _statusFilter != _PurchaseStatusFilter.all;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundColor(context),
       body: SafeArea(
         bottom: false,
         child: Stack(
@@ -453,6 +453,8 @@ class _PurchasesViewState extends ConsumerState<PurchasesView> {
           ? null
           : FloatingActionButton.extended(
               tooltip: 'Adicionar compra',
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
               onPressed: _openCreatePurchaseForm,
               icon: const Icon(Icons.add),
               label: const Text('Nova compra'),
@@ -487,9 +489,11 @@ class _PurchasesHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(bottom: BorderSide(color: AppColors.border)),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceColor(context),
+        border: Border(
+          bottom: BorderSide(color: AppColors.borderColor(context)),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -499,6 +503,7 @@ class _PurchasesHeader extends StatelessWidget {
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
               fontSize: 26,
               fontWeight: FontWeight.w800,
+              color: AppColors.textPrimaryColor(context),
             ),
           ),
           const SizedBox(height: 5),
@@ -506,7 +511,9 @@ class _PurchasesHeader extends StatelessWidget {
             'Registre suas compras e acompanhe os totais.',
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondaryColor(context),
+            ),
           ),
           const SizedBox(height: 16),
           Row(
@@ -517,7 +524,9 @@ class _PurchasesHeader extends StatelessWidget {
                   title: 'Em andamento',
                   value: inProgressCount.toString(),
                   foregroundColor: AppColors.warning,
-                  backgroundColor: AppColors.warning.withValues(alpha: 0.11),
+                  backgroundColor: AppColors.warning.withValues(
+                    alpha: AppColors.isDark(context) ? 0.18 : 0.11,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -527,7 +536,9 @@ class _PurchasesHeader extends StatelessWidget {
                   title: 'Finalizadas',
                   value: completedCount.toString(),
                   foregroundColor: AppColors.success,
-                  backgroundColor: AppColors.success.withValues(alpha: 0.11),
+                  backgroundColor: AppColors.success.withValues(
+                    alpha: AppColors.isDark(context) ? 0.18 : 0.11,
+                  ),
                 ),
               ),
             ],
@@ -538,10 +549,14 @@ class _PurchasesHeader extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.08),
+                color: AppColors.primary.withValues(
+                  alpha: AppColors.isDark(context) ? 0.14 : 0.08,
+                ),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.16),
+                  color: AppColors.primary.withValues(
+                    alpha: AppColors.isDark(context) ? 0.28 : 0.16,
+                  ),
                 ),
               ),
               child: Row(
@@ -550,7 +565,9 @@ class _PurchasesHeader extends StatelessWidget {
                     width: 38,
                     height: 38,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.12),
+                      color: AppColors.primary.withValues(
+                        alpha: AppColors.isDark(context) ? 0.18 : 0.12,
+                      ),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Icon(
@@ -564,10 +581,10 @@ class _PurchasesHeader extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Total registrado',
                           style: TextStyle(
-                            color: AppColors.textSecondary,
+                            color: AppColors.textSecondaryColor(context),
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                           ),
@@ -589,8 +606,8 @@ class _PurchasesHeader extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     '${state.purchases.length} compras',
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
+                    style: TextStyle(
+                      color: AppColors.textSecondaryColor(context),
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
@@ -627,27 +644,40 @@ class _PurchasesControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppColors.background,
+      color: AppColors.backgroundColor(context),
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
       child: Column(
         children: [
           TextField(
             controller: searchController,
             textCapitalization: TextCapitalization.words,
+            style: TextStyle(
+              color: AppColors.textPrimaryColor(context),
+              fontWeight: FontWeight.w600,
+            ),
             onChanged: onSearchChanged,
             decoration: InputDecoration(
               hintText: 'Buscar por compra, mercado ou tipo',
-              prefixIcon: const Icon(Icons.search_rounded),
+              hintStyle: TextStyle(
+                color: AppColors.textSecondaryColor(context),
+              ),
+              prefixIcon: Icon(
+                Icons.search_rounded,
+                color: AppColors.textSecondaryColor(context),
+              ),
               suffixIcon: searchController.text.trim().isEmpty
                   ? null
                   : IconButton(
                       tooltip: 'Limpar busca',
                       onPressed: onClearSearch,
-                      icon: const Icon(Icons.close_rounded),
+                      icon: Icon(
+                        Icons.close_rounded,
+                        color: AppColors.textSecondaryColor(context),
+                      ),
                     ),
               filled: true,
               isDense: true,
-              fillColor: AppColors.surface,
+              fillColor: AppColors.surfaceColor(context),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 14,
                 vertical: 13,
@@ -657,7 +687,7 @@ class _PurchasesControls extends StatelessWidget {
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(18),
-                borderSide: const BorderSide(color: AppColors.border),
+                borderSide: BorderSide(color: AppColors.borderColor(context)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(18),
@@ -680,7 +710,12 @@ class _PurchasesControls extends StatelessWidget {
                       value: statusFilter,
                       isExpanded: true,
                       borderRadius: BorderRadius.circular(16),
-                      dropdownColor: AppColors.surface,
+                      dropdownColor: AppColors.surfaceColor(context),
+                      style: TextStyle(
+                        color: AppColors.textPrimaryColor(context),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
                       items: _PurchaseStatusFilter.values.map((filter) {
                         return DropdownMenuItem<_PurchaseStatusFilter>(
                           value: filter,
@@ -711,7 +746,12 @@ class _PurchasesControls extends StatelessWidget {
                       value: sortOption,
                       isExpanded: true,
                       borderRadius: BorderRadius.circular(16),
-                      dropdownColor: AppColors.surface,
+                      dropdownColor: AppColors.surfaceColor(context),
+                      style: TextStyle(
+                        color: AppColors.textPrimaryColor(context),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
                       items: _PurchaseSortOption.values.map((option) {
                         return DropdownMenuItem<_PurchaseSortOption>(
                           value: option,
@@ -757,13 +797,13 @@ class _PurchaseFilterDropdown extends StatelessWidget {
       height: 58,
       padding: const EdgeInsets.fromLTRB(12, 8, 10, 6),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceColor(context),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: AppColors.textSecondary),
+          Icon(icon, size: 18, color: AppColors.textSecondaryColor(context)),
           const SizedBox(width: 7),
           Expanded(
             child: Column(
@@ -773,8 +813,8 @@ class _PurchaseFilterDropdown extends StatelessWidget {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
+                  style: TextStyle(
+                    color: AppColors.textSecondaryColor(context),
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                   ),
@@ -811,6 +851,11 @@ class _HeaderSummaryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(17),
+        border: Border.all(
+          color: foregroundColor.withValues(
+            alpha: AppColors.isDark(context) ? 0.22 : 0,
+          ),
+        ),
       ),
       child: Row(
         children: [
@@ -868,7 +913,7 @@ class _LocalFeedbackMessage extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: color.withValues(alpha: AppColors.isDark(context) ? 0.18 : 0.12),
         borderRadius: BorderRadius.circular(17),
         border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
@@ -920,6 +965,7 @@ class _PurchaseCard extends StatelessWidget {
     final isCompleted = purchase.isCompleted;
 
     return Card(
+      color: AppColors.surfaceColor(context),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
@@ -936,8 +982,12 @@ class _PurchaseCard extends StatelessWidget {
                     height: 46,
                     decoration: BoxDecoration(
                       color: isCompleted
-                          ? AppColors.success.withValues(alpha: 0.11)
-                          : AppColors.primary.withValues(alpha: 0.11),
+                          ? AppColors.success.withValues(
+                              alpha: AppColors.isDark(context) ? 0.18 : 0.11,
+                            )
+                          : AppColors.primary.withValues(
+                              alpha: AppColors.isDark(context) ? 0.18 : 0.11,
+                            ),
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: Icon(
@@ -959,15 +1009,18 @@ class _PurchaseCard extends StatelessWidget {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w800),
+                              ?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textPrimaryColor(context),
+                              ),
                         ),
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.storefront_outlined,
                               size: 16,
-                              color: AppColors.textSecondary,
+                              color: AppColors.textSecondaryColor(context),
                             ),
                             const SizedBox(width: 5),
                             Expanded(
@@ -975,7 +1028,12 @@ class _PurchaseCard extends StatelessWidget {
                                 purchase.market,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.bodyMedium,
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(
+                                      color: AppColors.textSecondaryColor(
+                                        context,
+                                      ),
+                                    ),
                               ),
                             ),
                           ],
@@ -984,6 +1042,7 @@ class _PurchaseCard extends StatelessWidget {
                     ),
                   ),
                   PopupMenuButton<String>(
+                    color: AppColors.surfaceColor(context),
                     tooltip: 'Opções da compra',
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
@@ -1052,7 +1111,7 @@ class _PurchaseCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 14),
-              const Divider(height: 1),
+              Divider(height: 1, color: AppColors.borderColor(context)),
               const SizedBox(height: 13),
               Row(
                 children: [
@@ -1062,10 +1121,10 @@ class _PurchaseCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        const Text(
+                        Text(
                           'Total',
                           style: TextStyle(
-                            color: AppColors.textSecondary,
+                            color: AppColors.textSecondaryColor(context),
                             fontSize: 11,
                           ),
                         ),
@@ -1085,10 +1144,10 @@ class _PurchaseCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Toque para ver detalhes',
                 style: TextStyle(
-                  color: AppColors.textSecondary,
+                  color: AppColors.textSecondaryColor(context),
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                 ),
@@ -1112,19 +1171,19 @@ class _InformationChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: AppColors.surfaceSoftColor(context),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: AppColors.textSecondary),
+          Icon(icon, size: 14, color: AppColors.textSecondaryColor(context)),
           const SizedBox(width: 5),
           Text(
             label,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              color: AppColors.textSecondaryColor(context),
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
@@ -1147,7 +1206,7 @@ class _StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.11),
+        color: color.withValues(alpha: AppColors.isDark(context) ? 0.18 : 0.11),
         borderRadius: BorderRadius.circular(30),
       ),
       child: Text(
@@ -1177,7 +1236,7 @@ class _EmptyPurchasesState extends StatelessWidget {
               width: 84,
               height: 84,
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.10),
+                color: AppColors.primarySoftBackground(context),
                 borderRadius: BorderRadius.circular(27),
               ),
               child: const Icon(
@@ -1190,15 +1249,19 @@ class _EmptyPurchasesState extends StatelessWidget {
             Text(
               'Nenhuma compra cadastrada',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: AppColors.textPrimaryColor(context),
+                fontWeight: FontWeight.w900,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Crie sua primeira compra para começar a registrar os itens da feira.',
               textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(height: 1.45),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                height: 1.45,
+                color: AppColors.textSecondaryColor(context),
+              ),
             ),
           ],
         ),
@@ -1228,7 +1291,9 @@ class _NoPurchasesFoundState extends StatelessWidget {
               width: 78,
               height: 78,
               decoration: BoxDecoration(
-                color: AppColors.warning.withValues(alpha: 0.10),
+                color: AppColors.warning.withValues(
+                  alpha: AppColors.isDark(context) ? 0.18 : 0.10,
+                ),
                 borderRadius: BorderRadius.circular(26),
               ),
               child: const Icon(
@@ -1241,15 +1306,19 @@ class _NoPurchasesFoundState extends StatelessWidget {
             Text(
               'Nenhuma compra encontrada',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: AppColors.textPrimaryColor(context),
+                fontWeight: FontWeight.w900,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Altere a busca, o filtro ou a ordenação para visualizar outros registros.',
               textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(height: 1.45),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                height: 1.45,
+                color: AppColors.textSecondaryColor(context),
+              ),
             ),
             if (hasActiveSearchOrFilter) ...[
               const SizedBox(height: 16),
@@ -1275,7 +1344,7 @@ class _ScreenOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Positioned.fill(
       child: Container(
-        color: Colors.black.withValues(alpha: 0.48),
+        color: AppColors.overlayColor(context),
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(18, 18, 18, 26),
@@ -1447,12 +1516,14 @@ class _PurchaseFormPanelState extends State<_PurchaseFormPanel> {
         constraints: const BoxConstraints(maxWidth: 342),
         padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.surfaceColor(context),
           borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: AppColors.borderColor(context)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.16),
+              color: Colors.black.withValues(
+                alpha: AppColors.isDark(context) ? 0.26 : 0.16,
+              ),
               blurRadius: 28,
               offset: const Offset(0, 14),
             ),
@@ -1471,18 +1542,23 @@ class _PurchaseFormPanelState extends State<_PurchaseFormPanel> {
                       widget.purchase == null ? 'Nova compra' : 'Editar compra',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimaryColor(context),
                       ),
                     ),
                   ),
                   IconButton(
                     tooltip: 'Fechar',
                     onPressed: widget.onCancel,
-                    icon: const Icon(Icons.close_rounded),
+                    icon: Icon(
+                      Icons.close_rounded,
+                      color: AppColors.textSecondaryColor(context),
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
               _purchaseTextField(
+                context,
                 controller: _nameController,
                 label: 'Nome da compra *',
                 hint: 'Ex: Feira Junho 2026',
@@ -1494,6 +1570,7 @@ class _PurchaseFormPanelState extends State<_PurchaseFormPanel> {
               ),
               const SizedBox(height: 11),
               _purchaseTextField(
+                context,
                 controller: _marketController,
                 label: 'Mercado *',
                 hint: 'Ex: Assaí Atacadista',
@@ -1507,13 +1584,24 @@ class _PurchaseFormPanelState extends State<_PurchaseFormPanel> {
               TextFormField(
                 controller: _dateController,
                 readOnly: true,
-                decoration: _purchaseInputDecoration('Data da compra *')
-                    .copyWith(
-                      prefixIcon: const Icon(Icons.calendar_month_outlined),
+                style: TextStyle(
+                  color: AppColors.textPrimaryColor(context),
+                  fontWeight: FontWeight.w600,
+                ),
+                decoration:
+                    _purchaseInputDecoration(
+                      context,
+                      'Data da compra *',
+                    ).copyWith(
+                      prefixIcon: Icon(
+                        Icons.calendar_month_outlined,
+                        color: AppColors.textSecondaryColor(context),
+                      ),
                       suffixIcon: Icon(
                         _showCalendar
                             ? Icons.keyboard_arrow_up_rounded
                             : Icons.arrow_drop_down_rounded,
+                        color: AppColors.textSecondaryColor(context),
                       ),
                     ),
                 onTap: _toggleCalendar,
@@ -1542,8 +1630,16 @@ class _PurchaseFormPanelState extends State<_PurchaseFormPanel> {
                 isExpanded: true,
                 menuMaxHeight: 240,
                 borderRadius: BorderRadius.circular(18),
-                dropdownColor: AppColors.surface,
-                decoration: _purchaseInputDecoration('Tipo da compra *'),
+                dropdownColor: AppColors.surfaceColor(context),
+                style: TextStyle(
+                  color: AppColors.textPrimaryColor(context),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+                decoration: _purchaseInputDecoration(
+                  context,
+                  'Tipo da compra *',
+                ),
                 items: purchaseTypes.map((type) {
                   return DropdownMenuItem<PurchaseType>(
                     value: type,
@@ -1570,8 +1666,13 @@ class _PurchaseFormPanelState extends State<_PurchaseFormPanel> {
                 maxLength: 150,
                 maxLines: 2,
                 minLines: 2,
+                style: TextStyle(
+                  color: AppColors.textPrimaryColor(context),
+                  fontWeight: FontWeight.w600,
+                ),
                 inputFormatters: [LengthLimitingTextInputFormatter(150)],
                 decoration: _purchaseInputDecoration(
+                  context,
                   'Observação',
                 ).copyWith(hintText: 'Informação opcional'),
               ),
@@ -1581,7 +1682,9 @@ class _PurchaseFormPanelState extends State<_PurchaseFormPanel> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(11),
                   decoration: BoxDecoration(
-                    color: AppColors.danger.withValues(alpha: 0.08),
+                    color: AppColors.danger.withValues(
+                      alpha: AppColors.isDark(context) ? 0.16 : 0.08,
+                    ),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: AppColors.danger.withValues(alpha: 0.35),
@@ -1664,15 +1767,17 @@ class _InlineCalendar extends StatelessWidget {
       margin: const EdgeInsets.only(top: 10),
       padding: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: AppColors.surfaceSoftColor(context),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: Theme.of(
-            context,
-          ).colorScheme.copyWith(primary: AppColors.primary),
+          colorScheme: Theme.of(context).colorScheme.copyWith(
+            primary: AppColors.primary,
+            surface: AppColors.surfaceColor(context),
+            onSurface: AppColors.textPrimaryColor(context),
+          ),
         ),
         child: CalendarDatePicker(
           initialDate: safeSelectedDate,
@@ -1705,12 +1810,14 @@ class _DeletePurchasePanel extends StatelessWidget {
         constraints: const BoxConstraints(maxWidth: 330),
         padding: const EdgeInsets.fromLTRB(22, 24, 22, 18),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.surfaceColor(context),
           borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: AppColors.borderColor(context)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.16),
+              color: Colors.black.withValues(
+                alpha: AppColors.isDark(context) ? 0.26 : 0.16,
+              ),
               blurRadius: 28,
               offset: const Offset(0, 14),
             ),
@@ -1723,7 +1830,9 @@ class _DeletePurchasePanel extends StatelessWidget {
               width: 58,
               height: 58,
               decoration: BoxDecoration(
-                color: AppColors.danger.withValues(alpha: 0.10),
+                color: AppColors.danger.withValues(
+                  alpha: AppColors.isDark(context) ? 0.18 : 0.10,
+                ),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -1736,17 +1845,19 @@ class _DeletePurchasePanel extends StatelessWidget {
             Text(
               'Excluir compra?',
               textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimaryColor(context),
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'A compra "${purchase.name}" será removida permanentemente. Esta ação não pode ser desfeita.',
               textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(height: 1.45),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                height: 1.45,
+                color: AppColors.textSecondaryColor(context),
+              ),
             ),
             const SizedBox(height: 20),
             Row(
@@ -1777,7 +1888,8 @@ class _DeletePurchasePanel extends StatelessWidget {
   }
 }
 
-Widget _purchaseTextField({
+Widget _purchaseTextField(
+  BuildContext context, {
   required TextEditingController controller,
   required String label,
   required String hint,
@@ -1790,11 +1902,16 @@ Widget _purchaseTextField({
     maxLength: maxLength,
     textCapitalization: TextCapitalization.words,
     onChanged: onChanged,
+    style: TextStyle(
+      color: AppColors.textPrimaryColor(context),
+      fontWeight: FontWeight.w600,
+    ),
     inputFormatters: [
       FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZÀ-ÿ0-9 ]')),
       LengthLimitingTextInputFormatter(maxLength),
     ],
     decoration: _purchaseInputDecoration(
+      context,
       label,
     ).copyWith(hintText: hint, counterText: ''),
     validator: (value) {
@@ -1811,17 +1928,21 @@ Widget _purchaseTextField({
   );
 }
 
-InputDecoration _purchaseInputDecoration(String label) {
+InputDecoration _purchaseInputDecoration(BuildContext context, String label) {
   return InputDecoration(
     labelText: label,
+    labelStyle: TextStyle(color: AppColors.textSecondaryColor(context)),
+    hintStyle: TextStyle(
+      color: AppColors.textSecondaryColor(context).withValues(alpha: 0.75),
+    ),
     filled: true,
     isDense: true,
-    fillColor: AppColors.background,
+    fillColor: AppColors.surfaceSoftColor(context),
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: const BorderSide(color: AppColors.border),
+      borderSide: BorderSide(color: AppColors.borderColor(context)),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),

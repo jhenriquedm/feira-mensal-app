@@ -359,6 +359,7 @@ class _PurchaseDetailsPanelState extends ConsumerState<PurchaseDetailsPanel> {
                   'Itens da compra',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimaryColor(context),
                   ),
                 ),
               ),
@@ -445,12 +446,14 @@ class _DetailsShell extends StatelessWidget {
         constraints: const BoxConstraints(maxWidth: 372),
         padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.surfaceColor(context),
           borderRadius: BorderRadius.circular(30),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: AppColors.borderColor(context)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.16),
+              color: Colors.black.withValues(
+                alpha: AppColors.isDark(context) ? 0.28 : 0.16,
+              ),
               blurRadius: 28,
               offset: const Offset(0, 14),
             ),
@@ -481,8 +484,12 @@ class _PurchaseDetailsHeader extends StatelessWidget {
           height: 48,
           decoration: BoxDecoration(
             color: purchase.isCompleted
-                ? AppColors.success.withValues(alpha: 0.12)
-                : AppColors.primary.withValues(alpha: 0.12),
+                ? AppColors.success.withValues(
+                    alpha: AppColors.isDark(context) ? 0.18 : 0.12,
+                  )
+                : AppColors.primary.withValues(
+                    alpha: AppColors.isDark(context) ? 0.18 : 0.12,
+                  ),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Icon(
@@ -497,10 +504,10 @@ class _PurchaseDetailsHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Detalhes da compra',
                 style: TextStyle(
-                  color: AppColors.textSecondary,
+                  color: AppColors.textSecondaryColor(context),
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -510,9 +517,10 @@ class _PurchaseDetailsHeader extends StatelessWidget {
                 purchase.name,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimaryColor(context),
+                ),
               ),
               const SizedBox(height: 4),
               Text(
@@ -529,7 +537,10 @@ class _PurchaseDetailsHeader extends StatelessWidget {
         IconButton(
           tooltip: 'Fechar',
           onPressed: onClose,
-          icon: const Icon(Icons.close_rounded),
+          icon: Icon(
+            Icons.close_rounded,
+            color: AppColors.textSecondaryColor(context),
+          ),
         ),
       ],
     );
@@ -551,9 +562,9 @@ class _PurchaseDetailsSummary extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: AppColors.surfaceSoftColor(context),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Column(
         children: [
@@ -605,7 +616,7 @@ class _PurchaseDetailsSummary extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 14),
-          const Divider(height: 1),
+          Divider(height: 1, color: AppColors.borderColor(context)),
           const SizedBox(height: 14),
           Row(
             children: [
@@ -615,7 +626,9 @@ class _PurchaseDetailsSummary extends StatelessWidget {
                   vertical: 7,
                 ),
                 decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.12),
+                  color: statusColor.withValues(
+                    alpha: AppColors.isDark(context) ? 0.18 : 0.12,
+                  ),
                   borderRadius: BorderRadius.circular(30),
                 ),
                 child: Text(
@@ -632,10 +645,10 @@ class _PurchaseDetailsSummary extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    const Text(
+                    Text(
                       'Total da compra',
                       style: TextStyle(
-                        color: AppColors.textSecondary,
+                        color: AppColors.textSecondaryColor(context),
                         fontSize: 11,
                       ),
                     ),
@@ -683,26 +696,32 @@ class _AdvancedPurchaseSummary extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.06),
+        color: AppColors.primary.withValues(
+          alpha: AppColors.isDark(context) ? 0.13 : 0.06,
+        ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.16)),
+        border: Border.all(
+          color: AppColors.primary.withValues(
+            alpha: AppColors.isDark(context) ? 0.28 : 0.16,
+          ),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.auto_graph_rounded,
                 color: AppColors.primary,
                 size: 20,
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Resumo inteligente',
                   style: TextStyle(
-                    color: AppColors.textPrimary,
+                    color: AppColors.textPrimaryColor(context),
                     fontSize: 14,
                     fontWeight: FontWeight.w900,
                   ),
@@ -756,10 +775,10 @@ class _AdvancedPurchaseSummary extends StatelessWidget {
           ),
           if (categoryTotals.isNotEmpty) ...[
             const SizedBox(height: 14),
-            const Text(
+            Text(
               'Total por categoria',
               style: TextStyle(
-                color: AppColors.textPrimary,
+                color: AppColors.textPrimaryColor(context),
                 fontSize: 13,
                 fontWeight: FontWeight.w900,
               ),
@@ -781,8 +800,8 @@ class _AdvancedPurchaseSummary extends StatelessWidget {
             if (categoryTotals.length > 4)
               Text(
                 '+${categoryTotals.length - 4} categorias com valores menores',
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
+                style: TextStyle(
+                  color: AppColors.textSecondaryColor(context),
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                 ),
@@ -849,9 +868,9 @@ class _AdvancedMetricCard extends StatelessWidget {
       constraints: const BoxConstraints(minHeight: 94),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceColor(context),
         borderRadius: BorderRadius.circular(17),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -862,8 +881,8 @@ class _AdvancedMetricCard extends StatelessWidget {
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              color: AppColors.textSecondaryColor(context),
               fontSize: 10.5,
               fontWeight: FontWeight.w700,
             ),
@@ -884,8 +903,8 @@ class _AdvancedMetricCard extends StatelessWidget {
             subtitle,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              color: AppColors.textSecondaryColor(context),
               fontSize: 10.5,
             ),
           ),
@@ -916,9 +935,9 @@ class _InsightTile extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceColor(context),
         borderRadius: BorderRadius.circular(17),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Row(
         children: [
@@ -926,7 +945,9 @@ class _InsightTile extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.11),
+              color: color.withValues(
+                alpha: AppColors.isDark(context) ? 0.18 : 0.11,
+              ),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(icon, color: color, size: 20),
@@ -940,8 +961,8 @@ class _InsightTile extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
+                  style: TextStyle(
+                    color: AppColors.textSecondaryColor(context),
                     fontSize: 10.5,
                     fontWeight: FontWeight.w700,
                   ),
@@ -951,8 +972,8 @@ class _InsightTile extends StatelessWidget {
                   value,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: AppColors.textPrimaryColor(context),
                     fontSize: 13.5,
                     fontWeight: FontWeight.w900,
                   ),
@@ -962,8 +983,8 @@ class _InsightTile extends StatelessWidget {
                   subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
+                  style: TextStyle(
+                    color: AppColors.textSecondaryColor(context),
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
@@ -988,9 +1009,9 @@ class _CategoryTotalRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(11, 10, 11, 10),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceColor(context),
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Column(
         children: [
@@ -1001,8 +1022,8 @@ class _CategoryTotalRow extends StatelessWidget {
                   category.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: AppColors.textPrimaryColor(context),
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
                   ),
@@ -1025,7 +1046,9 @@ class _CategoryTotalRow extends StatelessWidget {
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 6,
-              backgroundColor: AppColors.primary.withValues(alpha: 0.10),
+              backgroundColor: AppColors.primary.withValues(
+                alpha: AppColors.isDark(context) ? 0.18 : 0.10,
+              ),
               color: AppColors.primary,
             ),
           ),
@@ -1057,7 +1080,7 @@ class _SummaryInfo extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: AppColors.textSecondary),
+        Icon(icon, size: 16, color: AppColors.textSecondaryColor(context)),
         const SizedBox(width: 6),
         Expanded(
           child: Column(
@@ -1067,8 +1090,8 @@ class _SummaryInfo extends StatelessWidget {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
+                style: TextStyle(
+                  color: AppColors.textSecondaryColor(context),
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
                 ),
@@ -1077,8 +1100,8 @@ class _SummaryInfo extends StatelessWidget {
                 value,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
+                style: TextStyle(
+                  color: AppColors.textPrimaryColor(context),
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
                 ),
@@ -1109,7 +1132,7 @@ class _DetailsFeedbackMessage extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: color.withValues(alpha: AppColors.isDark(context) ? 0.18 : 0.12),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
@@ -1160,7 +1183,9 @@ class _DeleteItemConfirmationPanel extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 13),
       decoration: BoxDecoration(
-        color: AppColors.danger.withValues(alpha: 0.08),
+        color: AppColors.danger.withValues(
+          alpha: AppColors.isDark(context) ? 0.16 : 0.08,
+        ),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.danger.withValues(alpha: 0.28)),
       ),
@@ -1172,7 +1197,9 @@ class _DeleteItemConfirmationPanel extends StatelessWidget {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: AppColors.danger.withValues(alpha: 0.12),
+                  color: AppColors.danger.withValues(
+                    alpha: AppColors.isDark(context) ? 0.18 : 0.12,
+                  ),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: const Icon(
@@ -1187,8 +1214,8 @@ class _DeleteItemConfirmationPanel extends StatelessWidget {
                   'Excluir "${item.productName}"?',
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: AppColors.textPrimaryColor(context),
                     fontSize: 14,
                     fontWeight: FontWeight.w900,
                   ),
@@ -1197,10 +1224,10 @@ class _DeleteItemConfirmationPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Essa ação removerá o item desta compra, mas não apagará o produto cadastrado.',
             style: TextStyle(
-              color: AppColors.textSecondary,
+              color: AppColors.textSecondaryColor(context),
               fontSize: 12,
               height: 1.35,
             ),
@@ -1254,20 +1281,31 @@ class _ItemControls extends StatelessWidget {
         TextField(
           controller: searchController,
           textCapitalization: TextCapitalization.words,
+          style: TextStyle(
+            color: AppColors.textPrimaryColor(context),
+            fontWeight: FontWeight.w600,
+          ),
           onChanged: onSearchChanged,
           decoration: InputDecoration(
             hintText: 'Buscar item, marca ou categoria',
-            prefixIcon: const Icon(Icons.search_rounded),
+            hintStyle: TextStyle(color: AppColors.textSecondaryColor(context)),
+            prefixIcon: Icon(
+              Icons.search_rounded,
+              color: AppColors.textSecondaryColor(context),
+            ),
             suffixIcon: searchController.text.trim().isEmpty
                 ? null
                 : IconButton(
                     tooltip: 'Limpar busca',
                     onPressed: onClearSearch,
-                    icon: const Icon(Icons.close_rounded),
+                    icon: Icon(
+                      Icons.close_rounded,
+                      color: AppColors.textSecondaryColor(context),
+                    ),
                   ),
             filled: true,
             isDense: true,
-            fillColor: AppColors.background,
+            fillColor: AppColors.surfaceSoftColor(context),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 14,
               vertical: 13,
@@ -1275,7 +1313,7 @@ class _ItemControls extends StatelessWidget {
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: AppColors.border),
+              borderSide: BorderSide(color: AppColors.borderColor(context)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
@@ -1291,15 +1329,15 @@ class _ItemControls extends StatelessWidget {
           height: 56,
           padding: const EdgeInsets.fromLTRB(12, 7, 10, 6),
           decoration: BoxDecoration(
-            color: AppColors.background,
+            color: AppColors.surfaceSoftColor(context),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: AppColors.borderColor(context)),
           ),
           child: Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.sort_rounded,
-                color: AppColors.textSecondary,
+                color: AppColors.textSecondaryColor(context),
                 size: 18,
               ),
               const SizedBox(width: 8),
@@ -1309,7 +1347,12 @@ class _ItemControls extends StatelessWidget {
                     value: sortOption,
                     isExpanded: true,
                     borderRadius: BorderRadius.circular(16),
-                    dropdownColor: AppColors.surface,
+                    dropdownColor: AppColors.surfaceColor(context),
+                    style: TextStyle(
+                      color: AppColors.textPrimaryColor(context),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
                     items: _PurchaseItemSortOption.values.map((option) {
                       return DropdownMenuItem<_PurchaseItemSortOption>(
                         value: option,
@@ -1591,9 +1634,9 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: AppColors.surfaceSoftColor(context),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Form(
         key: _formKey,
@@ -1607,13 +1650,17 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
                     isEditing ? 'Editar item' : 'Adicionar item',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimaryColor(context),
                     ),
                   ),
                 ),
                 IconButton(
                   tooltip: 'Fechar',
                   onPressed: widget.onCancel,
-                  icon: const Icon(Icons.close_rounded),
+                  icon: Icon(
+                    Icons.close_rounded,
+                    color: AppColors.textSecondaryColor(context),
+                  ),
                 ),
               ],
             ),
@@ -1637,17 +1684,23 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
                       controller: _productSearchController,
                       readOnly: isEditing,
                       textCapitalization: TextCapitalization.words,
-                      decoration: _detailsInputDecoration('Produto *').copyWith(
-                        hintText: 'Digite para buscar',
-                        suffixIcon: Icon(
-                          isEditing
-                              ? Icons.lock_outline_rounded
-                              : _showProductSuggestions
-                              ? Icons.keyboard_arrow_up_rounded
-                              : Icons.search_rounded,
-                        ),
-                        errorText: field.errorText,
+                      style: TextStyle(
+                        color: AppColors.textPrimaryColor(context),
+                        fontWeight: FontWeight.w600,
                       ),
+                      decoration: _detailsInputDecoration(context, 'Produto *')
+                          .copyWith(
+                            hintText: 'Digite para buscar',
+                            suffixIcon: Icon(
+                              isEditing
+                                  ? Icons.lock_outline_rounded
+                                  : _showProductSuggestions
+                                  ? Icons.keyboard_arrow_up_rounded
+                                  : Icons.search_rounded,
+                              color: AppColors.textSecondaryColor(context),
+                            ),
+                            errorText: field.errorText,
+                          ),
                       onTap: isEditing
                           ? null
                           : () {
@@ -1672,17 +1725,21 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
                       Container(
                         constraints: const BoxConstraints(maxHeight: 190),
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: AppColors.surfaceColor(context),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.border),
+                          border: Border.all(
+                            color: AppColors.borderColor(context),
+                          ),
                         ),
                         child: filteredProducts.isEmpty
-                            ? const Padding(
-                                padding: EdgeInsets.all(14),
+                            ? Padding(
+                                padding: const EdgeInsets.all(14),
                                 child: Text(
                                   'Nenhum produto encontrado.',
                                   style: TextStyle(
-                                    color: AppColors.textSecondary,
+                                    color: AppColors.textSecondaryColor(
+                                      context,
+                                    ),
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -1695,7 +1752,10 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
                                 ),
                                 itemCount: filteredProducts.length,
                                 separatorBuilder: (context, index) {
-                                  return const Divider(height: 1);
+                                  return Divider(
+                                    height: 1,
+                                    color: AppColors.borderColor(context),
+                                  );
                                 },
                                 itemBuilder: (context, index) {
                                   final product = filteredProducts[index];
@@ -1707,8 +1767,8 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
                                       width: 34,
                                       height: 34,
                                       decoration: BoxDecoration(
-                                        color: AppColors.primary.withValues(
-                                          alpha: 0.10,
+                                        color: AppColors.primarySoftBackground(
+                                          context,
                                         ),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
@@ -1722,7 +1782,10 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
                                       product.name,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
+                                      style: TextStyle(
+                                        color: AppColors.textPrimaryColor(
+                                          context,
+                                        ),
                                         fontSize: 13,
                                         fontWeight: FontWeight.w800,
                                       ),
@@ -1731,9 +1794,11 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
                                       _productBrandLabel(product),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 11,
-                                        color: AppColors.textSecondary,
+                                        color: AppColors.textSecondaryColor(
+                                          context,
+                                        ),
                                       ),
                                     ),
                                     onTap: () {
@@ -1755,6 +1820,10 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
                 Expanded(
                   child: TextFormField(
                     controller: _quantityController,
+                    style: TextStyle(
+                      color: AppColors.textPrimaryColor(context),
+                      fontWeight: FontWeight.w600,
+                    ),
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
@@ -1762,7 +1831,10 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
                       FilteringTextInputFormatter.allow(RegExp(r'[0-9,.]')),
                       LengthLimitingTextInputFormatter(5),
                     ],
-                    decoration: _detailsInputDecoration('Quantidade *'),
+                    decoration: _detailsInputDecoration(
+                      context,
+                      'Quantidade *',
+                    ),
                     onChanged: (_) {
                       _clearFormError();
                       setState(() {});
@@ -1782,14 +1854,23 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
                 Expanded(
                   child: TextFormField(
                     controller: _unitPriceController,
+                    style: TextStyle(
+                      color: AppColors.textPrimaryColor(context),
+                      fontWeight: FontWeight.w600,
+                    ),
                     keyboardType: TextInputType.number,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
                       _CurrencyInputFormatter(),
                     ],
-                    decoration: _detailsInputDecoration(
-                      'Preço un. *',
-                    ).copyWith(prefixText: 'R\$ '),
+                    decoration: _detailsInputDecoration(context, 'Preço un. *')
+                        .copyWith(
+                          prefixText: 'R\$ ',
+                          prefixStyle: TextStyle(
+                            color: AppColors.textSecondaryColor(context),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                     onChanged: (_) {
                       _clearFormError();
                       setState(() {});
@@ -1812,15 +1893,17 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.08),
+                color: AppColors.primary.withValues(
+                  alpha: AppColors.isDark(context) ? 0.14 : 0.08,
+                ),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
                 children: [
-                  const Text(
+                  Text(
                     'Total do item',
                     style: TextStyle(
-                      color: AppColors.textSecondary,
+                      color: AppColors.textSecondaryColor(context),
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1847,7 +1930,9 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(11),
                 decoration: BoxDecoration(
-                  color: AppColors.danger.withValues(alpha: 0.08),
+                  color: AppColors.danger.withValues(
+                    alpha: AppColors.isDark(context) ? 0.16 : 0.08,
+                  ),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: AppColors.danger.withValues(alpha: 0.35),
@@ -1974,9 +2059,9 @@ class _PurchaseItemCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(13, 13, 8, 13),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: AppColors.surfaceSoftColor(context),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Row(
         children: [
@@ -1984,7 +2069,7 @@ class _PurchaseItemCard extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.10),
+              color: AppColors.primarySoftBackground(context),
               borderRadius: BorderRadius.circular(14),
             ),
             child: const Icon(
@@ -2002,8 +2087,8 @@ class _PurchaseItemCard extends StatelessWidget {
                   item.productName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: AppColors.textPrimaryColor(context),
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
                   ),
@@ -2013,8 +2098,8 @@ class _PurchaseItemCard extends StatelessWidget {
                   '${item.productBrand} • ${_formatQuantity(item.quantity)} ${item.unit} • ${_detailsCurrencyFormatter.format(item.unitPrice)}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
+                  style: TextStyle(
+                    color: AppColors.textSecondaryColor(context),
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
@@ -2035,6 +2120,7 @@ class _PurchaseItemCard extends StatelessWidget {
           ),
           if (!isPurchaseCompleted)
             PopupMenuButton<String>(
+              color: AppColors.surfaceColor(context),
               tooltip: 'Opções do item',
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
@@ -2096,7 +2182,9 @@ class _NoProductsWarning extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.10),
+        color: AppColors.warning.withValues(
+          alpha: AppColors.isDark(context) ? 0.16 : 0.10,
+        ),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.warning.withValues(alpha: 0.30)),
       ),
@@ -2125,32 +2213,32 @@ class _EmptyItemsState extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(18, 22, 18, 22),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: AppColors.surfaceSoftColor(context),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Column(
         children: [
           Icon(
             Icons.inventory_2_outlined,
             size: 34,
-            color: AppColors.textSecondary.withValues(alpha: 0.8),
+            color: AppColors.textSecondaryColor(context).withValues(alpha: 0.8),
           ),
           const SizedBox(height: 10),
-          const Text(
+          Text(
             'Nenhum item adicionado',
             style: TextStyle(
-              color: AppColors.textPrimary,
+              color: AppColors.textPrimaryColor(context),
               fontSize: 14,
               fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Adicione produtos para calcular o total da compra.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: AppColors.textSecondary,
+              color: AppColors.textSecondaryColor(context),
               fontSize: 12,
               height: 1.35,
             ),
@@ -2176,32 +2264,32 @@ class _NoItemsFoundState extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(18, 22, 18, 22),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: AppColors.surfaceSoftColor(context),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Column(
         children: [
           Icon(
             Icons.search_off_rounded,
             size: 34,
-            color: AppColors.textSecondary.withValues(alpha: 0.8),
+            color: AppColors.textSecondaryColor(context).withValues(alpha: 0.8),
           ),
           const SizedBox(height: 10),
-          const Text(
+          Text(
             'Nenhum item encontrado',
             style: TextStyle(
-              color: AppColors.textPrimary,
+              color: AppColors.textPrimaryColor(context),
               fontSize: 14,
               fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Altere a busca ou a ordenação para visualizar outros itens.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: AppColors.textSecondary,
+              color: AppColors.textSecondaryColor(context),
               fontSize: 12,
               height: 1.35,
             ),
@@ -2225,13 +2313,13 @@ class _PurchaseNotFoundState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.all(22),
+    return Padding(
+      padding: const EdgeInsets.all(22),
       child: Text(
         _DetailsMessages.purchaseNotFound,
         textAlign: TextAlign.center,
         style: TextStyle(
-          color: AppColors.textSecondary,
+          color: AppColors.textSecondaryColor(context),
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -2303,17 +2391,21 @@ class _CurrencyInputFormatter extends TextInputFormatter {
   }
 }
 
-InputDecoration _detailsInputDecoration(String label) {
+InputDecoration _detailsInputDecoration(BuildContext context, String label) {
   return InputDecoration(
     labelText: label,
+    labelStyle: TextStyle(color: AppColors.textSecondaryColor(context)),
+    hintStyle: TextStyle(
+      color: AppColors.textSecondaryColor(context).withValues(alpha: 0.75),
+    ),
     filled: true,
     isDense: true,
-    fillColor: AppColors.surface,
+    fillColor: AppColors.surfaceColor(context),
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: const BorderSide(color: AppColors.border),
+      borderSide: BorderSide(color: AppColors.borderColor(context)),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
