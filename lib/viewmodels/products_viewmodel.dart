@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 
 import '../models/category_model.dart';
 import '../models/product_model.dart';
+import '../models/sync_status.dart';
 import '../services/local_storage_service.dart';
 import 'auth_viewmodel.dart';
 
@@ -34,15 +35,37 @@ class ProductsState {
   final List<CategoryModel> categories;
   final List<ProductModel> products;
 
-  const ProductsState({required this.categories, required this.products});
+  // Registros removidos ficam escondidos da interface,
+  // mas preservados para uma sincronização futura com Firestore.
+  final List<CategoryModel> deletedCategories;
+  final List<ProductModel> deletedProducts;
+
+  const ProductsState({
+    required this.categories,
+    required this.products,
+    this.deletedCategories = const [],
+    this.deletedProducts = const [],
+  });
+
+  List<CategoryModel> get allCategoriesForStorage {
+    return [...categories, ...deletedCategories];
+  }
+
+  List<ProductModel> get allProductsForStorage {
+    return [...products, ...deletedProducts];
+  }
 
   ProductsState copyWith({
     List<CategoryModel>? categories,
     List<ProductModel>? products,
+    List<CategoryModel>? deletedCategories,
+    List<ProductModel>? deletedProducts,
   }) {
     return ProductsState(
       categories: categories ?? this.categories,
       products: products ?? this.products,
+      deletedCategories: deletedCategories ?? this.deletedCategories,
+      deletedProducts: deletedProducts ?? this.deletedProducts,
     );
   }
 }
@@ -111,11 +134,18 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
   }
 
   void addCategory({required String name, required bool isActive}) {
+    final now = DateTime.now();
+
     final category = CategoryModel(
       id: _uuid.v4(),
       name: name.trim(),
       iconName: 'custom',
       isActive: isActive,
+      createdAt: now,
+      updatedAt: now,
+      lastSyncedAt: null,
+      syncStatus: SyncStatus.pendingCreate,
+      isDeleted: false,
     );
 
     _emitState(state.copyWith(categories: [...state.categories, category]));
@@ -126,12 +156,19 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
     required String name,
     required bool isActive,
   }) {
+    final now = DateTime.now();
+
     final updatedCategories = state.categories.map((category) {
       if (category.id != id) {
         return category;
       }
 
-      return category.copyWith(name: name.trim(), isActive: isActive);
+      final updatedCategory = category.copyWith(
+        name: name.trim(),
+        isActive: isActive,
+      );
+
+      return _markCategoryAsUpdated(updatedCategory, now);
     }).toList();
 
     _emitState(state.copyWith(categories: updatedCategories));
@@ -144,11 +181,34 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
   }
 
   void deleteCategory(String categoryId) {
-    final updatedCategories = state.categories
-        .where((category) => category.id != categoryId)
+    final category = _findCategoryById(categoryId);
+
+    if (category == null) {
+      return;
+    }
+
+    final visibleCategories = state.categories
+        .where((currentCategory) => currentCategory.id != categoryId)
         .toList();
 
-    _emitState(state.copyWith(categories: updatedCategories));
+    if (category.syncStatus == SyncStatus.pendingCreate) {
+      _emitState(state.copyWith(categories: visibleCategories));
+      return;
+    }
+
+    final deletedCategory = _markCategoryAsDeleted(category, DateTime.now());
+
+    final deletedCategories = [
+      ...state.deletedCategories.where((item) => item.id != categoryId),
+      deletedCategory,
+    ];
+
+    _emitState(
+      state.copyWith(
+        categories: visibleCategories,
+        deletedCategories: deletedCategories,
+      ),
+    );
   }
 
   void addProduct({
@@ -158,6 +218,8 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
     required String brand,
     required bool isActive,
   }) {
+    final now = DateTime.now();
+
     final product = ProductModel(
       id: _uuid.v4(),
       name: name.trim(),
@@ -165,6 +227,11 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
       unit: unit,
       brand: brand.trim(),
       isActive: isActive,
+      createdAt: now,
+      updatedAt: now,
+      lastSyncedAt: null,
+      syncStatus: SyncStatus.pendingCreate,
+      isDeleted: false,
     );
 
     _emitState(state.copyWith(products: [...state.products, product]));
@@ -178,18 +245,22 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
     required String brand,
     required bool isActive,
   }) {
+    final now = DateTime.now();
+
     final updatedProducts = state.products.map((product) {
       if (product.id != id) {
         return product;
       }
 
-      return product.copyWith(
+      final updatedProduct = product.copyWith(
         name: name.trim(),
         categoryId: categoryId,
         unit: unit,
         brand: brand.trim(),
         isActive: isActive,
       );
+
+      return _markProductAsUpdated(updatedProduct, now);
     }).toList();
 
     _emitState(state.copyWith(products: updatedProducts));
@@ -225,36 +296,107 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
   }
 
   void deleteProduct(String id) {
-    final updatedProducts = state.products
-        .where((product) => product.id != id)
+    final product = _findProductById(id);
+
+    if (product == null) {
+      return;
+    }
+
+    final visibleProducts = state.products
+        .where((currentProduct) => currentProduct.id != id)
         .toList();
 
-    _emitState(state.copyWith(products: updatedProducts));
+    if (product.syncStatus == SyncStatus.pendingCreate) {
+      _emitState(state.copyWith(products: visibleProducts));
+      return;
+    }
+
+    final deletedProduct = _markProductAsDeleted(product, DateTime.now());
+
+    final deletedProducts = [
+      ...state.deletedProducts.where((item) => item.id != id),
+      deletedProduct,
+    ];
+
+    _emitState(
+      state.copyWith(
+        products: visibleProducts,
+        deletedProducts: deletedProducts,
+      ),
+    );
   }
 
   void resetProductsAndCategories() {
     _emitState(
-      const ProductsState(categories: defaultCategories, products: []),
+      ProductsState(
+        categories: _preparedDefaultCategories(),
+        products: const [],
+      ),
     );
   }
 
   void restoreDefaultCategories() {
+    final now = DateTime.now();
+
     final updatedCategories = [...state.categories];
+    final deletedCategories = [...state.deletedCategories];
 
     for (final defaultCategory in defaultCategories) {
-      final index = updatedCategories.indexWhere((category) {
+      final visibleIndex = updatedCategories.indexWhere((category) {
         return category.id == defaultCategory.id;
       });
 
-      if (index == -1) {
-        updatedCategories.add(defaultCategory);
+      if (visibleIndex != -1) {
+        final restoredCategory = updatedCategories[visibleIndex].copyWith(
+          name: defaultCategory.name,
+          iconName: defaultCategory.iconName,
+          isActive: true,
+        );
+
+        updatedCategories[visibleIndex] = _markCategoryAsUpdated(
+          restoredCategory,
+          now,
+        );
+
         continue;
       }
 
-      updatedCategories[index] = defaultCategory.copyWith(isActive: true);
+      final deletedIndex = deletedCategories.indexWhere((category) {
+        return category.id == defaultCategory.id;
+      });
+
+      if (deletedIndex != -1) {
+        final restoredCategory = deletedCategories[deletedIndex].copyWith(
+          name: defaultCategory.name,
+          iconName: defaultCategory.iconName,
+          isActive: true,
+          isDeleted: false,
+        );
+
+        deletedCategories.removeAt(deletedIndex);
+
+        updatedCategories.add(_markCategoryAsUpdated(restoredCategory, now));
+
+        continue;
+      }
+
+      updatedCategories.add(
+        defaultCategory.copyWith(
+          createdAt: now,
+          updatedAt: now,
+          clearLastSyncedAt: true,
+          syncStatus: SyncStatus.pendingCreate,
+          isDeleted: false,
+        ),
+      );
     }
 
-    _emitState(state.copyWith(categories: updatedCategories));
+    _emitState(
+      state.copyWith(
+        categories: updatedCategories,
+        deletedCategories: deletedCategories,
+      ),
+    );
   }
 
   String getCategoryName(String categoryId) {
@@ -275,17 +417,45 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
       userId: userId,
     );
 
-    if (!mounted || savedData == null) {
+    if (!mounted) {
       return;
     }
 
-    final categories = savedData.categories.isEmpty
-        ? defaultCategories
-        : savedData.categories;
+    if (savedData == null) {
+      _emitState(
+        ProductsState(
+          categories: _preparedDefaultCategories(),
+          products: const [],
+        ),
+      );
+      return;
+    }
+
+    final visibleCategories = savedData.categories
+        .where((category) => !category.isDeleted)
+        .toList();
+
+    final deletedCategories = savedData.categories
+        .where((category) => category.isDeleted)
+        .toList();
+
+    final visibleProducts = savedData.products
+        .where((product) => !product.isDeleted)
+        .toList();
+
+    final deletedProducts = savedData.products
+        .where((product) => product.isDeleted)
+        .toList();
+
+    final categories = visibleCategories.isEmpty
+        ? _preparedDefaultCategories()
+        : visibleCategories;
 
     state = ProductsState(
       categories: List.unmodifiable(categories),
-      products: List.unmodifiable(savedData.products),
+      products: List.unmodifiable(visibleProducts),
+      deletedCategories: List.unmodifiable(deletedCategories),
+      deletedProducts: List.unmodifiable(deletedProducts),
     );
   }
 
@@ -297,6 +467,8 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
     state = ProductsState(
       categories: List.unmodifiable(nextState.categories),
       products: List.unmodifiable(nextState.products),
+      deletedCategories: List.unmodifiable(nextState.deletedCategories),
+      deletedProducts: List.unmodifiable(nextState.deletedProducts),
     );
 
     _saveLocalData();
@@ -305,8 +477,90 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
   void _saveLocalData() {
     LocalStorageService.saveProductsDataForUser(
       userId: userId,
-      categories: state.categories,
-      products: state.products,
+      categories: state.allCategoriesForStorage,
+      products: state.allProductsForStorage,
+    );
+  }
+
+  CategoryModel? _findCategoryById(String id) {
+    for (final category in state.categories) {
+      if (category.id == id) {
+        return category;
+      }
+    }
+
+    return null;
+  }
+
+  ProductModel? _findProductById(String id) {
+    for (final product in state.products) {
+      if (product.id == id) {
+        return product;
+      }
+    }
+
+    return null;
+  }
+
+  List<CategoryModel> _preparedDefaultCategories() {
+    final now = DateTime.now();
+
+    return defaultCategories.map((category) {
+      return category.copyWith(
+        createdAt: category.createdAt ?? now,
+        updatedAt: category.updatedAt ?? now,
+        clearLastSyncedAt: true,
+        syncStatus: category.syncStatus,
+        isDeleted: false,
+      );
+    }).toList();
+  }
+
+  CategoryModel _markCategoryAsUpdated(CategoryModel category, DateTime now) {
+    final nextSyncStatus = category.syncStatus == SyncStatus.pendingCreate
+        ? SyncStatus.pendingCreate
+        : SyncStatus.pendingUpdate;
+
+    return category.copyWith(
+      createdAt: category.createdAt ?? now,
+      updatedAt: now,
+      clearLastSyncedAt: true,
+      syncStatus: nextSyncStatus,
+      isDeleted: false,
+    );
+  }
+
+  CategoryModel _markCategoryAsDeleted(CategoryModel category, DateTime now) {
+    return category.copyWith(
+      createdAt: category.createdAt ?? now,
+      updatedAt: now,
+      clearLastSyncedAt: true,
+      syncStatus: SyncStatus.pendingDelete,
+      isDeleted: true,
+    );
+  }
+
+  ProductModel _markProductAsUpdated(ProductModel product, DateTime now) {
+    final nextSyncStatus = product.syncStatus == SyncStatus.pendingCreate
+        ? SyncStatus.pendingCreate
+        : SyncStatus.pendingUpdate;
+
+    return product.copyWith(
+      createdAt: product.createdAt ?? now,
+      updatedAt: now,
+      clearLastSyncedAt: true,
+      syncStatus: nextSyncStatus,
+      isDeleted: false,
+    );
+  }
+
+  ProductModel _markProductAsDeleted(ProductModel product, DateTime now) {
+    return product.copyWith(
+      createdAt: product.createdAt ?? now,
+      updatedAt: now,
+      clearLastSyncedAt: true,
+      syncStatus: SyncStatus.pendingDelete,
+      isDeleted: true,
     );
   }
 

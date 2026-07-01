@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 
 import '../models/purchase_item_model.dart';
 import '../models/purchase_model.dart';
+import '../models/sync_status.dart';
 import '../services/local_storage_service.dart';
 import 'auth_viewmodel.dart';
 
@@ -29,10 +30,27 @@ final productIdsLinkedToPurchasesProvider = Provider<Set<String>>((ref) {
 class PurchasesState {
   final List<PurchaseModel> purchases;
 
-  const PurchasesState({required this.purchases});
+  // Compras removidas ficam escondidas da interface,
+  // mas preservadas para uma sincronização futura com Firestore.
+  final List<PurchaseModel> deletedPurchases;
 
-  PurchasesState copyWith({List<PurchaseModel>? purchases}) {
-    return PurchasesState(purchases: purchases ?? this.purchases);
+  const PurchasesState({
+    required this.purchases,
+    this.deletedPurchases = const [],
+  });
+
+  List<PurchaseModel> get allPurchasesForStorage {
+    return [...purchases, ...deletedPurchases];
+  }
+
+  PurchasesState copyWith({
+    List<PurchaseModel>? purchases,
+    List<PurchaseModel>? deletedPurchases,
+  }) {
+    return PurchasesState(
+      purchases: purchases ?? this.purchases,
+      deletedPurchases: deletedPurchases ?? this.deletedPurchases,
+    );
   }
 }
 
@@ -94,6 +112,8 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
     required PurchaseType type,
     String? notes,
   }) {
+    final now = DateTime.now();
+
     final purchase = PurchaseModel(
       id: _uuid.v4(),
       name: name.trim(),
@@ -103,6 +123,11 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
       notes: _nullableText(notes),
       status: PurchaseStatus.inProgress,
       items: const [],
+      createdAt: now,
+      updatedAt: now,
+      lastSyncedAt: null,
+      syncStatus: SyncStatus.pendingCreate,
+      isDeleted: false,
     );
 
     _emitPurchases([...state.purchases, purchase]);
@@ -116,12 +141,14 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
     required PurchaseType type,
     String? notes,
   }) {
+    final now = DateTime.now();
+
     final updatedPurchases = state.purchases.map((purchase) {
       if (purchase.id != id) {
         return purchase;
       }
 
-      return purchase.copyWith(
+      final updatedPurchase = purchase.copyWith(
         name: name.trim(),
         market: market.trim(),
         date: date,
@@ -129,6 +156,8 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
         notes: _nullableText(notes),
         clearNotes: notes == null || notes.trim().isEmpty,
       );
+
+      return _markPurchaseAsUpdated(updatedPurchase, now);
     }).toList();
 
     _emitPurchases(updatedPurchases);
@@ -145,11 +174,29 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
   }
 
   void deletePurchase(String purchaseId) {
-    final updatedPurchases = state.purchases
-        .where((purchase) => purchase.id != purchaseId)
+    final purchase = findPurchaseById(purchaseId);
+
+    if (purchase == null) {
+      return;
+    }
+
+    final visiblePurchases = state.purchases
+        .where((currentPurchase) => currentPurchase.id != purchaseId)
         .toList();
 
-    _emitPurchases(updatedPurchases);
+    if (purchase.syncStatus == SyncStatus.pendingCreate) {
+      _emitPurchases(visiblePurchases);
+      return;
+    }
+
+    final deletedPurchase = _markPurchaseAsDeleted(purchase, DateTime.now());
+
+    final deletedPurchases = [
+      ...state.deletedPurchases.where((item) => item.id != purchaseId),
+      deletedPurchase,
+    ];
+
+    _emitPurchases(visiblePurchases, deletedPurchases: deletedPurchases);
   }
 
   void completePurchase(String purchaseId) {
@@ -218,12 +265,18 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
       unitPrice: unitPrice,
     );
 
+    final now = DateTime.now();
+
     final updatedPurchases = state.purchases.map((currentPurchase) {
       if (currentPurchase.id != purchaseId) {
         return currentPurchase;
       }
 
-      return currentPurchase.copyWith(items: [...currentPurchase.items, item]);
+      final updatedPurchase = currentPurchase.copyWith(
+        items: [...currentPurchase.items, item],
+      );
+
+      return _markPurchaseAsUpdated(updatedPurchase, now);
     }).toList();
 
     _emitPurchases(updatedPurchases);
@@ -274,7 +327,9 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
       );
     }).toList();
 
-    _replacePurchase(purchase.copyWith(items: updatedItems));
+    final updatedPurchase = purchase.copyWith(items: updatedItems);
+
+    _replacePurchase(_markPurchaseAsUpdated(updatedPurchase, DateTime.now()));
 
     return true;
   }
@@ -290,7 +345,9 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
         .where((item) => item.id != itemId)
         .toList();
 
-    _replacePurchase(purchase.copyWith(items: updatedItems));
+    final updatedPurchase = purchase.copyWith(items: updatedItems);
+
+    _replacePurchase(_markPurchaseAsUpdated(updatedPurchase, DateTime.now()));
 
     return true;
   }
@@ -304,7 +361,16 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
   }
 
   void clearAllPurchases() {
-    _emitPurchases(const []);
+    final now = DateTime.now();
+
+    final deletedPurchases = [
+      ...state.deletedPurchases,
+      ...state.purchases
+          .where((purchase) => purchase.syncStatus != SyncStatus.pendingCreate)
+          .map((purchase) => _markPurchaseAsDeleted(purchase, now)),
+    ];
+
+    _emitPurchases(const [], deletedPurchases: deletedPurchases);
   }
 
   Future<void> _loadSavedPurchases() async {
@@ -316,19 +382,34 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
       return;
     }
 
-    state = state.copyWith(purchases: List.unmodifiable(savedPurchases));
+    final visiblePurchases = savedPurchases
+        .where((purchase) => !purchase.isDeleted)
+        .toList();
+
+    final deletedPurchases = savedPurchases
+        .where((purchase) => purchase.isDeleted)
+        .toList();
+
+    state = state.copyWith(
+      purchases: List.unmodifiable(visiblePurchases),
+      deletedPurchases: List.unmodifiable(deletedPurchases),
+    );
   }
 
   void _updatePurchaseStatus({
     required String purchaseId,
     required PurchaseStatus status,
   }) {
+    final now = DateTime.now();
+
     final updatedPurchases = state.purchases.map((purchase) {
       if (purchase.id != purchaseId) {
         return purchase;
       }
 
-      return purchase.copyWith(status: status);
+      final updatedPurchase = purchase.copyWith(status: status);
+
+      return _markPurchaseAsUpdated(updatedPurchase, now);
     }).toList();
 
     _emitPurchases(updatedPurchases);
@@ -346,12 +427,20 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
     _emitPurchases(updatedPurchases);
   }
 
-  void _emitPurchases(List<PurchaseModel> purchases) {
+  void _emitPurchases(
+    List<PurchaseModel> purchases, {
+    List<PurchaseModel>? deletedPurchases,
+  }) {
     if (!mounted) {
       return;
     }
 
-    state = state.copyWith(purchases: List.unmodifiable(purchases));
+    state = state.copyWith(
+      purchases: List.unmodifiable(purchases),
+      deletedPurchases: List.unmodifiable(
+        deletedPurchases ?? state.deletedPurchases,
+      ),
+    );
 
     _saveLocalData();
   }
@@ -359,7 +448,31 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
   void _saveLocalData() {
     LocalStorageService.savePurchasesForUser(
       userId: userId,
-      purchases: state.purchases,
+      purchases: state.allPurchasesForStorage,
+    );
+  }
+
+  PurchaseModel _markPurchaseAsUpdated(PurchaseModel purchase, DateTime now) {
+    final nextSyncStatus = purchase.syncStatus == SyncStatus.pendingCreate
+        ? SyncStatus.pendingCreate
+        : SyncStatus.pendingUpdate;
+
+    return purchase.copyWith(
+      createdAt: purchase.createdAt ?? now,
+      updatedAt: now,
+      clearLastSyncedAt: true,
+      syncStatus: nextSyncStatus,
+      isDeleted: false,
+    );
+  }
+
+  PurchaseModel _markPurchaseAsDeleted(PurchaseModel purchase, DateTime now) {
+    return purchase.copyWith(
+      createdAt: purchase.createdAt ?? now,
+      updatedAt: now,
+      clearLastSyncedAt: true,
+      syncStatus: SyncStatus.pendingDelete,
+      isDeleted: true,
     );
   }
 
