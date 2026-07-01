@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../models/purchase_item_model.dart';
 import '../models/purchase_model.dart';
 import '../models/sync_status.dart';
+import '../services/firestore_sync_service.dart';
 import '../services/local_storage_service.dart';
 import 'auth_viewmodel.dart';
 
@@ -30,8 +31,6 @@ final productIdsLinkedToPurchasesProvider = Provider<Set<String>>((ref) {
 class PurchasesState {
   final List<PurchaseModel> purchases;
 
-  // Compras removidas ficam escondidas da interface,
-  // mas preservadas para uma sincronização futura com Firestore.
   final List<PurchaseModel> deletedPurchases;
 
   const PurchasesState({
@@ -63,6 +62,9 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
   }
 
   final Uuid _uuid = const Uuid();
+
+  bool _isSyncing = false;
+  bool _syncAgainRequested = false;
 
   List<PurchaseModel> get sortedPurchases {
     final purchases = [...state.purchases];
@@ -366,8 +368,12 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
     final deletedPurchases = [
       ...state.deletedPurchases,
       ...state.purchases
-          .where((purchase) => purchase.syncStatus != SyncStatus.pendingCreate)
-          .map((purchase) => _markPurchaseAsDeleted(purchase, now)),
+          .where((purchase) {
+            return purchase.syncStatus != SyncStatus.pendingCreate;
+          })
+          .map((purchase) {
+            return _markPurchaseAsDeleted(purchase, now);
+          }),
     ];
 
     _emitPurchases(const [], deletedPurchases: deletedPurchases);
@@ -394,6 +400,8 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
       purchases: List.unmodifiable(visiblePurchases),
       deletedPurchases: List.unmodifiable(deletedPurchases),
     );
+
+    _trySyncPurchases();
   }
 
   void _updatePurchaseStatus({
@@ -443,6 +451,7 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
     );
 
     _saveLocalData();
+    _trySyncPurchases();
   }
 
   void _saveLocalData() {
@@ -450,6 +459,60 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
       userId: userId,
       purchases: state.allPurchasesForStorage,
     );
+  }
+
+  Future<void> _trySyncPurchases() async {
+    if (userId.trim().isEmpty || userId == 'no_user') {
+      return;
+    }
+
+    if (_isSyncing) {
+      _syncAgainRequested = true;
+      return;
+    }
+
+    _isSyncing = true;
+
+    final purchasesSnapshot = state.allPurchasesForStorage;
+
+    try {
+      final result = await FirestoreSyncService.syncPurchasesForUser(
+        userId: userId,
+        purchases: purchasesSnapshot,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (_syncAgainRequested) {
+        return;
+      }
+
+      final visiblePurchases = result.purchases
+          .where((purchase) => !purchase.isDeleted)
+          .toList();
+
+      final deletedPurchases = result.purchases
+          .where((purchase) => purchase.isDeleted)
+          .toList();
+
+      state = PurchasesState(
+        purchases: List.unmodifiable(visiblePurchases),
+        deletedPurchases: List.unmodifiable(deletedPurchases),
+      );
+
+      _saveLocalData();
+    } catch (_) {
+      // Se estiver offline ou o Firestore falhar, mantemos tudo pendente localmente.
+    } finally {
+      _isSyncing = false;
+
+      if (_syncAgainRequested) {
+        _syncAgainRequested = false;
+        _trySyncPurchases();
+      }
+    }
   }
 
   PurchaseModel _markPurchaseAsUpdated(PurchaseModel purchase, DateTime now) {
