@@ -17,6 +17,25 @@ final NumberFormat _currencyFormatter = NumberFormat.currency(
 
 final DateFormat _dateFormatter = DateFormat('dd/MM/yyyy');
 
+class _PurchasesMessages {
+  static const purchaseCreated = 'Compra cadastrada com sucesso.';
+  static const purchaseUpdated = 'Compra atualizada com sucesso.';
+  static const purchaseDeleted = 'Compra excluída com sucesso.';
+
+  static const purchaseDeleteBlocked =
+      'Esta compra não pode ser excluída porque possui itens cadastrados.';
+  static const futureDateBlocked =
+      'Não é permitido cadastrar compra com data futura.';
+  static const duplicatePurchase =
+      'Já existe uma compra cadastrada com este nome, mercado e data.';
+
+  static const nameRequired = 'Informe o nome da compra';
+  static const marketRequired = 'Informe o mercado';
+  static const dateRequired = 'Informe a data da compra';
+  static const typeRequired = 'Selecione o tipo da compra';
+  static const minCharacters = 'Informe pelo menos 2 caracteres';
+}
+
 enum _PurchaseStatusFilter { all, inProgress, completed }
 
 extension _PurchaseStatusFilterExtension on _PurchaseStatusFilter {
@@ -242,7 +261,7 @@ class _PurchasesViewState extends ConsumerState<PurchasesView> {
 
     if (!viewModel.canDeletePurchase(purchase.id)) {
       _showLocalMessage(
-        'A compra não pode ser excluída porque possui itens.',
+        _PurchasesMessages.purchaseDeleteBlocked,
         isError: true,
       );
       return;
@@ -275,7 +294,7 @@ class _PurchasesViewState extends ConsumerState<PurchasesView> {
 
     ref.read(purchasesProvider.notifier).deletePurchase(purchase.id);
 
-    _showLocalMessage('Compra excluída com sucesso.');
+    _showLocalMessage(_PurchasesMessages.purchaseDeleted);
   }
 
   void _cancelDeletePurchase() {
@@ -465,7 +484,9 @@ class _PurchasesHeader extends StatelessWidget {
           ),
           const SizedBox(height: 5),
           Text(
-            'Organize e acompanhe suas feiras.',
+            'Registre suas compras e acompanhe os totais.',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 16),
@@ -546,6 +567,7 @@ class _PurchasesHeader extends StatelessWidget {
                       ],
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Text(
                     '${state.purchases.length} compras',
                     style: const TextStyle(
@@ -781,6 +803,8 @@ class _HeaderSummaryCard extends StatelessWidget {
               children: [
                 Text(
                   value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: foregroundColor,
                     fontSize: 18,
@@ -842,10 +866,14 @@ class _LocalFeedbackMessage extends StatelessWidget {
           Expanded(
             child: Text(
               message,
+              softWrap: true,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: color,
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
+                height: 1.3,
               ),
             ),
           ),
@@ -937,7 +965,7 @@ class _PurchaseCard extends StatelessWidget {
                     ),
                   ),
                   PopupMenuButton<String>(
-                    tooltip: 'Opções',
+                    tooltip: 'Opções da compra',
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -1010,26 +1038,30 @@ class _PurchaseCard extends StatelessWidget {
               Row(
                 children: [
                   _StatusChip(isCompleted: isCompleted),
-                  const Spacer(),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      const Text(
-                        'Total',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 11,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Text(
+                          'Total',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 11,
+                          ),
                         ),
-                      ),
-                      Text(
-                        _currencyFormatter.format(purchase.total),
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w800,
-                            ),
-                      ),
-                    ],
+                        Text(
+                          _currencyFormatter.format(purchase.total),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -1348,7 +1380,7 @@ class _PurchaseFormPanelState extends State<_PurchaseFormPanel> {
 
     if (_selectedDate.isAfter(_todayOnly)) {
       setState(() {
-        _duplicateError = 'Não é permitido cadastrar compra com data futura.';
+        _duplicateError = _PurchasesMessages.futureDateBlocked;
       });
       return;
     }
@@ -1362,7 +1394,7 @@ class _PurchaseFormPanelState extends State<_PurchaseFormPanel> {
 
     if (alreadyExists) {
       setState(() {
-        _duplicateError = 'Já existe uma compra com este nome, mercado e data.';
+        _duplicateError = _PurchasesMessages.duplicatePurchase;
       });
       return;
     }
@@ -1376,8 +1408,8 @@ class _PurchaseFormPanelState extends State<_PurchaseFormPanel> {
         type: _selectedType!,
         notes: _notesController.text.trim(),
         message: widget.purchase == null
-            ? 'Compra cadastrada com sucesso.'
-            : 'Compra atualizada com sucesso.',
+            ? _PurchasesMessages.purchaseCreated
+            : _PurchasesMessages.purchaseUpdated,
       ),
     );
   }
@@ -1436,7 +1468,7 @@ class _PurchaseFormPanelState extends State<_PurchaseFormPanel> {
                 label: 'Nome da compra *',
                 hint: 'Ex: Feira Junho 2026',
                 maxLength: 40,
-                requiredMessage: 'Informe o nome da compra',
+                requiredMessage: _PurchasesMessages.nameRequired,
                 onChanged: (_) {
                   _clearDuplicateError();
                 },
@@ -1447,7 +1479,7 @@ class _PurchaseFormPanelState extends State<_PurchaseFormPanel> {
                 label: 'Mercado *',
                 hint: 'Ex: Assaí Atacadista',
                 maxLength: 40,
-                requiredMessage: 'Informe o mercado',
+                requiredMessage: _PurchasesMessages.marketRequired,
                 onChanged: (_) {
                   _clearDuplicateError();
                 },
@@ -1468,7 +1500,7 @@ class _PurchaseFormPanelState extends State<_PurchaseFormPanel> {
                 onTap: _toggleCalendar,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Informe a data da compra';
+                    return _PurchasesMessages.dateRequired;
                   }
 
                   return null;
@@ -1507,7 +1539,7 @@ class _PurchaseFormPanelState extends State<_PurchaseFormPanel> {
                 },
                 validator: (value) {
                   if (value == null) {
-                    return 'Selecione o tipo da compra';
+                    return _PurchasesMessages.typeRequired;
                   }
 
                   return null;
@@ -1548,10 +1580,14 @@ class _PurchaseFormPanelState extends State<_PurchaseFormPanel> {
                       Expanded(
                         child: Text(
                           _duplicateError!,
+                          softWrap: true,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: AppColors.danger,
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
+                            height: 1.3,
                           ),
                         ),
                       ),
@@ -1687,7 +1723,7 @@ class _DeletePurchasePanel extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'A compra "${purchase.name}" será removida permanentemente.',
+              'A compra "${purchase.name}" será removida permanentemente. Esta ação não pode ser desfeita.',
               textAlign: TextAlign.center,
               style: Theme.of(
                 context,
@@ -1748,7 +1784,7 @@ Widget _purchaseTextField({
       }
 
       if (value.trim().length < 2) {
-        return 'Informe pelo menos 2 caracteres';
+        return _PurchasesMessages.minCharacters;
       }
 
       return null;
