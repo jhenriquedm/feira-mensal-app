@@ -22,6 +22,8 @@ class _PurchasesMessages {
   static const purchaseUpdated = 'Compra atualizada com sucesso.';
   static const purchaseDeleted = 'Compra excluída com sucesso.';
 
+  static const purchaseEditBlocked =
+      'Compra finalizada não pode ser editada. Reabra a compra para alterar os dados.';
   static const purchaseDeleteBlocked =
       'Esta compra não pode ser excluída porque possui itens cadastrados.';
   static const futureDateBlocked =
@@ -205,6 +207,15 @@ class _PurchasesViewState extends ConsumerState<PurchasesView> {
   }
 
   void _openEditPurchaseForm(PurchaseModel purchase) {
+    final canEdit = ref
+        .read(purchasesProvider.notifier)
+        .canEditPurchase(purchase.id);
+
+    if (!canEdit) {
+      _showLocalMessage(_PurchasesMessages.purchaseEditBlocked, isError: true);
+      return;
+    }
+
     setState(() {
       _purchaseBeingEdited = purchase;
       _purchasePendingDelete = null;
@@ -242,15 +253,23 @@ class _PurchasesViewState extends ConsumerState<PurchasesView> {
         type: result.type,
         notes: result.notes,
       );
-    } else {
-      viewModel.updatePurchase(
-        id: result.purchaseId!,
-        name: result.name,
-        market: result.market,
-        date: result.date,
-        type: result.type,
-        notes: result.notes,
-      );
+
+      _showLocalMessage(result.message);
+      return;
+    }
+
+    final updated = viewModel.updatePurchase(
+      id: result.purchaseId!,
+      name: result.name,
+      market: result.market,
+      date: result.date,
+      type: result.type,
+      notes: result.notes,
+    );
+
+    if (!updated) {
+      _showLocalMessage(_PurchasesMessages.purchaseEditBlocked, isError: true);
+      return;
     }
 
     _showLocalMessage(result.message);

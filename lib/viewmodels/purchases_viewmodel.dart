@@ -85,6 +85,16 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
     return null;
   }
 
+  bool canEditPurchase(String purchaseId) {
+    final purchase = findPurchaseById(purchaseId);
+
+    if (purchase == null) {
+      return false;
+    }
+
+    return !purchase.isCompleted;
+  }
+
   bool purchaseAlreadyExists({
     required String name,
     required String market,
@@ -134,7 +144,7 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
     _emitPurchases([...state.purchases, purchase]);
   }
 
-  void updatePurchase({
+  bool updatePurchase({
     required String id,
     required String name,
     required String market,
@@ -142,14 +152,20 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
     required PurchaseType type,
     String? notes,
   }) {
+    final purchase = findPurchaseById(id);
+
+    if (purchase == null || purchase.isCompleted) {
+      return false;
+    }
+
     final now = DateTime.now();
 
-    final updatedPurchases = state.purchases.map((purchase) {
-      if (purchase.id != id) {
-        return purchase;
+    final updatedPurchases = state.purchases.map((currentPurchase) {
+      if (currentPurchase.id != id) {
+        return currentPurchase;
       }
 
-      final updatedPurchase = purchase.copyWith(
+      final updatedPurchase = currentPurchase.copyWith(
         name: name.trim(),
         market: market.trim(),
         date: date,
@@ -162,6 +178,8 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
     }).toList();
 
     _emitPurchases(updatedPurchases);
+
+    return true;
   }
 
   bool canDeletePurchase(String purchaseId) {
