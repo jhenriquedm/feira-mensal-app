@@ -44,6 +44,7 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.backgroundColor(context),
       appBar: null,
       body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: _buildBottomNavigation(),
@@ -53,9 +54,9 @@ class _MainShellState extends State<MainShell> {
   Widget _buildBottomNavigation() {
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.border)),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceColor(context),
+        border: Border(top: BorderSide(color: AppColors.borderColor(context))),
       ),
       child: SafeArea(
         top: false,
@@ -92,6 +93,8 @@ class _MainShellState extends State<MainShell> {
   }) {
     final bool isSelected = _selectedIndex == index;
 
+    final unselectedColor = AppColors.textSecondaryColor(context);
+
     return Expanded(
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
@@ -101,7 +104,7 @@ class _MainShellState extends State<MainShell> {
           padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 6),
           decoration: BoxDecoration(
             color: isSelected
-                ? AppColors.primary.withValues(alpha: 0.12)
+                ? AppColors.selectedPrimaryBackground(context)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(18),
           ),
@@ -111,7 +114,7 @@ class _MainShellState extends State<MainShell> {
               Icon(
                 icon,
                 size: 23,
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                color: isSelected ? AppColors.primary : unselectedColor,
               ),
               const SizedBox(height: 4),
               Text(
@@ -121,9 +124,7 @@ class _MainShellState extends State<MainShell> {
                 style: TextStyle(
                   fontSize: 10.5,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected
-                      ? AppColors.primary
-                      : AppColors.textSecondary,
+                  color: isSelected ? AppColors.primary : unselectedColor,
                 ),
               ),
             ],

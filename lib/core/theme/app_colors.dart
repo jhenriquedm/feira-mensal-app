@@ -25,4 +25,56 @@ class AppColors {
   static const Color darkTextSecondary = Color(0xFFCBD5E1);
 
   static const Color darkBorder = Color(0xFF334155);
+
+  static bool isDark(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark;
+  }
+
+  static Color backgroundColor(BuildContext context) {
+    return isDark(context) ? darkBackground : background;
+  }
+
+  static Color surfaceColor(BuildContext context) {
+    return isDark(context) ? darkSurface : surface;
+  }
+
+  static Color surfaceSoftColor(BuildContext context) {
+    return isDark(context) ? darkSurfaceSoft : const Color(0xFFF3F4F6);
+  }
+
+  static Color textPrimaryColor(BuildContext context) {
+    return isDark(context) ? darkTextPrimary : textPrimary;
+  }
+
+  static Color textSecondaryColor(BuildContext context) {
+    return isDark(context) ? darkTextSecondary : textSecondary;
+  }
+
+  static Color borderColor(BuildContext context) {
+    return isDark(context) ? darkBorder : border;
+  }
+
+  static Color selectedPrimaryBackground(BuildContext context) {
+    return primary.withValues(alpha: isDark(context) ? 0.20 : 0.12);
+  }
+
+  static Color primarySoftBackground(BuildContext context) {
+    return primary.withValues(alpha: isDark(context) ? 0.18 : 0.10);
+  }
+
+  static Color successSoftBackground(BuildContext context) {
+    return success.withValues(alpha: isDark(context) ? 0.18 : 0.10);
+  }
+
+  static Color warningSoftBackground(BuildContext context) {
+    return warning.withValues(alpha: isDark(context) ? 0.18 : 0.10);
+  }
+
+  static Color dangerSoftBackground(BuildContext context) {
+    return danger.withValues(alpha: isDark(context) ? 0.18 : 0.10);
+  }
+
+  static Color overlayColor(BuildContext context) {
+    return Colors.black.withValues(alpha: isDark(context) ? 0.54 : 0.34);
+  }
 }

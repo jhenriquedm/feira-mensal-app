@@ -171,9 +171,6 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                           title: _SettingsTexts.restoreCategoriesTitle,
                           subtitle: _SettingsTexts.restoreCategoriesSubtitle,
                           foregroundColor: AppColors.primary,
-                          backgroundColor: AppColors.primary.withValues(
-                            alpha: 0.10,
-                          ),
                           onTap: () {
                             _openConfirmation(
                               _SettingsConfirmationAction
@@ -187,9 +184,6 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                           title: _SettingsTexts.clearDeviceDataTitle,
                           subtitle: _SettingsTexts.clearDeviceDataSubtitle,
                           foregroundColor: AppColors.primary,
-                          backgroundColor: AppColors.primary.withValues(
-                            alpha: 0.10,
-                          ),
                           onTap: () {
                             _openConfirmation(
                               _SettingsConfirmationAction.clearDeviceData,
@@ -202,9 +196,6 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                           title: _SettingsTexts.clearAllDataTitle,
                           subtitle: _SettingsTexts.clearAllDataSubtitle,
                           foregroundColor: AppColors.danger,
-                          backgroundColor: AppColors.danger.withValues(
-                            alpha: 0.10,
-                          ),
                           onTap: () {
                             _openConfirmation(
                               _SettingsConfirmationAction.clearAllData,
@@ -224,9 +215,6 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                           title: _SettingsTexts.logoutTitle,
                           subtitle: _SettingsTexts.logoutSubtitle,
                           foregroundColor: AppColors.danger,
-                          backgroundColor: AppColors.danger.withValues(
-                            alpha: 0.10,
-                          ),
                           onTap: () {
                             _openConfirmation(
                               _SettingsConfirmationAction.logout,
@@ -422,9 +410,11 @@ class _SettingsHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(bottom: BorderSide(color: AppColors.border)),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceColor(context),
+        border: Border(
+          bottom: BorderSide(color: AppColors.borderColor(context)),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -434,6 +424,7 @@ class _SettingsHeader extends StatelessWidget {
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
               fontSize: 26,
               fontWeight: FontWeight.w800,
+              color: AppColors.textPrimaryColor(context),
             ),
           ),
           const SizedBox(height: 5),
@@ -441,7 +432,9 @@ class _SettingsHeader extends StatelessWidget {
             subtitle,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondaryColor(context),
+            ),
           ),
         ],
       ),
@@ -460,9 +453,9 @@ class _CurrentUserCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceColor(context),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Row(
         children: [
@@ -470,7 +463,7 @@ class _CurrentUserCard extends StatelessWidget {
             width: 46,
             height: 46,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.10),
+              color: AppColors.primarySoftBackground(context),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
@@ -484,10 +477,10 @@ class _CurrentUserCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   _SettingsTexts.userConnected,
                   style: TextStyle(
-                    color: AppColors.textSecondary,
+                    color: AppColors.textSecondaryColor(context),
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                   ),
@@ -497,8 +490,8 @@ class _CurrentUserCard extends StatelessWidget {
                   name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: AppColors.textPrimaryColor(context),
                     fontSize: 15,
                     fontWeight: FontWeight.w900,
                   ),
@@ -508,8 +501,8 @@ class _CurrentUserCard extends StatelessWidget {
                   email,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
+                  style: TextStyle(
+                    color: AppColors.textSecondaryColor(context),
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
                   ),
@@ -541,28 +534,34 @@ class _AccountSummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.09),
+        color: AppColors.primary.withValues(
+          alpha: AppColors.isDark(context) ? 0.13 : 0.09,
+        ),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.20)),
+        border: Border.all(
+          color: AppColors.primary.withValues(
+            alpha: AppColors.isDark(context) ? 0.28 : 0.20,
+          ),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.dashboard_customize_outlined,
                 color: AppColors.primary,
                 size: 22,
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   _SettingsTexts.accountSummaryTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: AppColors.textPrimary,
+                    color: AppColors.textPrimaryColor(context),
                     fontSize: 15,
                     fontWeight: FontWeight.w900,
                   ),
@@ -571,11 +570,11 @@ class _AccountSummaryCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             _SettingsTexts.accountSummarySubtitle,
             softWrap: true,
             style: TextStyle(
-              color: AppColors.textSecondary,
+              color: AppColors.textSecondaryColor(context),
               fontSize: 12,
               height: 1.35,
             ),
@@ -608,16 +607,16 @@ class _StorageChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceColor(context),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Text(
         '$label: $value',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
-          color: AppColors.textPrimary,
+        style: TextStyle(
+          color: AppColors.textPrimaryColor(context),
           fontSize: 11.5,
           fontWeight: FontWeight.w800,
         ),
@@ -641,9 +640,10 @@ class _SettingsSection extends StatelessWidget {
           title,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w900,
+            color: AppColors.textPrimaryColor(context),
+          ),
         ),
         const SizedBox(height: 10),
         child,
@@ -657,7 +657,6 @@ class _SettingsActionCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final Color foregroundColor;
-  final Color backgroundColor;
   final VoidCallback onTap;
 
   const _SettingsActionCard({
@@ -665,14 +664,13 @@ class _SettingsActionCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.foregroundColor,
-    required this.backgroundColor,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.surface,
+      color: AppColors.surfaceColor(context),
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
@@ -681,7 +679,7 @@ class _SettingsActionCard extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: AppColors.borderColor(context)),
           ),
           child: Row(
             children: [
@@ -689,7 +687,9 @@ class _SettingsActionCard extends StatelessWidget {
                 width: 43,
                 height: 43,
                 decoration: BoxDecoration(
-                  color: backgroundColor,
+                  color: foregroundColor.withValues(
+                    alpha: AppColors.isDark(context) ? 0.18 : 0.10,
+                  ),
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: Icon(icon, color: foregroundColor, size: 22),
@@ -703,8 +703,8 @@ class _SettingsActionCard extends StatelessWidget {
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
+                      style: TextStyle(
+                        color: AppColors.textPrimaryColor(context),
                         fontSize: 14,
                         fontWeight: FontWeight.w900,
                       ),
@@ -714,8 +714,8 @@ class _SettingsActionCard extends StatelessWidget {
                       subtitle,
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
+                      style: TextStyle(
+                        color: AppColors.textSecondaryColor(context),
                         fontSize: 11.5,
                         height: 1.35,
                       ),
@@ -724,9 +724,9 @@ class _SettingsActionCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
-                color: AppColors.textSecondary,
+                color: AppColors.textSecondaryColor(context),
               ),
             ],
           ),
@@ -752,9 +752,9 @@ class _SettingsInfoTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceColor(context),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Row(
         children: [
@@ -768,8 +768,8 @@ class _SettingsInfoTile extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: AppColors.textPrimaryColor(context),
                     fontSize: 14,
                     fontWeight: FontWeight.w900,
                   ),
@@ -779,8 +779,8 @@ class _SettingsInfoTile extends StatelessWidget {
                   subtitle,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
+                  style: TextStyle(
+                    color: AppColors.textSecondaryColor(context),
                     fontSize: 11.5,
                     height: 1.35,
                   ),
@@ -808,9 +808,13 @@ class _SettingsFeedback extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
+        color: color.withValues(alpha: AppColors.isDark(context) ? 0.18 : 0.10),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: color.withValues(alpha: 0.25)),
+        border: Border.all(
+          color: color.withValues(
+            alpha: AppColors.isDark(context) ? 0.34 : 0.25,
+          ),
+        ),
       ),
       child: Row(
         children: [
@@ -854,24 +858,28 @@ class _ThemeModeCard extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceColor(context),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.palette_outlined, color: AppColors.primary, size: 22),
-              SizedBox(width: 10),
+              const Icon(
+                Icons.palette_outlined,
+                color: AppColors.primary,
+                size: 22,
+              ),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   _SettingsTexts.themeTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: AppColors.textPrimary,
+                    color: AppColors.textPrimaryColor(context),
                     fontSize: 14,
                     fontWeight: FontWeight.w900,
                   ),
@@ -880,11 +888,11 @@ class _ThemeModeCard extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             _SettingsTexts.themeSubtitle,
             softWrap: true,
             style: TextStyle(
-              color: AppColors.textSecondary,
+              color: AppColors.textSecondaryColor(context),
               fontSize: 11.5,
               height: 1.35,
             ),
@@ -938,7 +946,7 @@ class _ThemeModeOption extends StatelessWidget {
   Widget build(BuildContext context) {
     final foregroundColor = isSelected
         ? AppColors.primary
-        : AppColors.textSecondary;
+        : AppColors.textSecondaryColor(context);
 
     return InkWell(
       borderRadius: BorderRadius.circular(16),
@@ -948,11 +956,13 @@ class _ThemeModeOption extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.primary.withValues(alpha: 0.12)
-              : AppColors.background,
+              ? AppColors.selectedPrimaryBackground(context)
+              : AppColors.surfaceSoftColor(context),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
+            color: isSelected
+                ? AppColors.primary
+                : AppColors.borderColor(context),
           ),
         ),
         child: Column(
@@ -1032,12 +1042,12 @@ class _SettingsConfirmationOverlay extends StatelessWidget {
 
     return Positioned.fill(
       child: Container(
-        color: Colors.black.withValues(alpha: 0.34),
+        color: AppColors.overlayColor(context),
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(22),
             child: Material(
-              color: AppColors.surface,
+              color: AppColors.surfaceColor(context),
               borderRadius: BorderRadius.circular(24),
               child: Container(
                 width: double.infinity,
@@ -1045,10 +1055,10 @@ class _SettingsConfirmationOverlay extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: AppColors.borderColor(context)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.16),
+                      color: Colors.black.withValues(alpha: 0.20),
                       blurRadius: 28,
                       offset: const Offset(0, 14),
                     ),
@@ -1061,7 +1071,9 @@ class _SettingsConfirmationOverlay extends StatelessWidget {
                       width: 58,
                       height: 58,
                       decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.10),
+                        color: color.withValues(
+                          alpha: AppColors.isDark(context) ? 0.18 : 0.10,
+                        ),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Icon(
@@ -1082,8 +1094,8 @@ class _SettingsConfirmationOverlay extends StatelessWidget {
                       textAlign: TextAlign.center,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
+                      style: TextStyle(
+                        color: AppColors.textPrimaryColor(context),
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
                       ),
@@ -1093,8 +1105,8 @@ class _SettingsConfirmationOverlay extends StatelessWidget {
                       message,
                       textAlign: TextAlign.center,
                       softWrap: true,
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
+                      style: TextStyle(
+                        color: AppColors.textSecondaryColor(context),
                         fontSize: 12.5,
                         height: 1.45,
                       ),
