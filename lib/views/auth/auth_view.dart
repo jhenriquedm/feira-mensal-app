@@ -143,7 +143,7 @@ class _AuthViewState extends ConsumerState<AuthView> {
         : 'Acesse sua conta para organizar suas compras.';
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundColor(context),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -239,7 +239,9 @@ class _AuthTopHeader extends StatelessWidget {
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.24),
+            color: AppColors.primary.withValues(
+              alpha: AppColors.isDark(context) ? 0.18 : 0.24,
+            ),
             blurRadius: 24,
             offset: const Offset(0, 12),
           ),
@@ -364,12 +366,14 @@ class _AuthFormPanel extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceColor(context),
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.045),
+            color: Colors.black.withValues(
+              alpha: AppColors.isDark(context) ? 0.24 : 0.045,
+            ),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -387,6 +391,7 @@ class _AuthFormPanel extends StatelessWidget {
                     isRegisterMode ? 'Dados do cadastro' : 'Dados de acesso',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w900,
+                      color: AppColors.textPrimaryColor(context),
                     ),
                   ),
                 ),
@@ -402,6 +407,7 @@ class _AuthFormPanel extends StatelessWidget {
             const SizedBox(height: 15),
             if (isRegisterMode) ...[
               _authTextField(
+                context,
                 controller: nameController,
                 label: 'Nome *',
                 hint: 'Seu nome',
@@ -429,6 +435,7 @@ class _AuthFormPanel extends StatelessWidget {
               const SizedBox(height: 13),
             ],
             _authTextField(
+              context,
               controller: emailController,
               label: 'E-mail *',
               hint: 'email@dominio.com',
@@ -457,6 +464,7 @@ class _AuthFormPanel extends StatelessWidget {
             ),
             const SizedBox(height: 13),
             _authTextField(
+              context,
               controller: passwordController,
               label: 'Senha *',
               hint: 'Mínimo 6 caracteres',
@@ -493,6 +501,7 @@ class _AuthFormPanel extends StatelessWidget {
             if (isRegisterMode) ...[
               const SizedBox(height: 13),
               _authTextField(
+                context,
                 controller: confirmPasswordController,
                 label: 'Confirmar senha *',
                 hint: 'Repita sua senha',
@@ -558,7 +567,8 @@ class _AuthFormPanel extends StatelessWidget {
     );
   }
 
-  Widget _authTextField({
+  Widget _authTextField(
+    BuildContext context, {
     required TextEditingController controller,
     required String label,
     required String hint,
@@ -576,14 +586,24 @@ class _AuthFormPanel extends StatelessWidget {
       textCapitalization: textCapitalization,
       obscureText: obscureText,
       inputFormatters: inputFormatters,
+      style: TextStyle(
+        color: AppColors.textPrimaryColor(context),
+        fontWeight: FontWeight.w600,
+      ),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
+        labelStyle: TextStyle(color: AppColors.textSecondaryColor(context)),
+        hintStyle: TextStyle(
+          color: AppColors.textSecondaryColor(context).withValues(alpha: 0.75),
+        ),
         prefixIcon: Icon(icon),
+        prefixIconColor: AppColors.textSecondaryColor(context),
         suffixIcon: suffixIcon,
+        suffixIconColor: AppColors.textSecondaryColor(context),
         filled: true,
         isDense: true,
-        fillColor: AppColors.background,
+        fillColor: AppColors.surfaceSoftColor(context),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 14,
           vertical: 14,
@@ -591,7 +611,7 @@ class _AuthFormPanel extends StatelessWidget {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(17)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(17),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: AppColors.borderColor(context)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(17),
@@ -629,7 +649,7 @@ class _AuthFeedbackMessage extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: color.withValues(alpha: AppColors.isDark(context) ? 0.18 : 0.12),
         borderRadius: BorderRadius.circular(17),
         border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
@@ -675,9 +695,9 @@ class _AuthModeSwitcher extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceColor(context),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
       ),
       child: Row(
         children: [
@@ -694,8 +714,8 @@ class _AuthModeSwitcher extends StatelessWidget {
               isRegisterMode
                   ? 'Já possui uma conta cadastrada?'
                   : 'Ainda não possui uma conta?',
-              style: const TextStyle(
-                color: AppColors.textSecondary,
+              style: TextStyle(
+                color: AppColors.textSecondaryColor(context),
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
@@ -723,33 +743,35 @@ class _AuthBenefitsCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 15),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceColor(context),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderColor(context)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.035),
+            color: Colors.black.withValues(
+              alpha: AppColors.isDark(context) ? 0.20 : 0.035,
+            ),
             blurRadius: 14,
             offset: const Offset(0, 7),
           ),
         ],
       ),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.auto_awesome_rounded,
                 color: AppColors.primary,
                 size: 21,
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'O que o app oferece?',
                   style: TextStyle(
-                    color: AppColors.textPrimary,
+                    color: AppColors.textPrimaryColor(context),
                     fontSize: 14,
                     fontWeight: FontWeight.w900,
                   ),
@@ -757,20 +779,20 @@ class _AuthBenefitsCard extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: 13),
-          _BenefitItem(
+          const SizedBox(height: 13),
+          const _BenefitItem(
             icon: Icons.shopping_basket_outlined,
             title: 'Produtos organizados',
             subtitle: 'Cadastre itens, marcas, categorias e unidades.',
           ),
-          SizedBox(height: 10),
-          _BenefitItem(
+          const SizedBox(height: 10),
+          const _BenefitItem(
             icon: Icons.receipt_long_outlined,
             title: 'Compras mensais',
             subtitle: 'Registre suas feiras e acompanhe cada item.',
           ),
-          SizedBox(height: 10),
-          _BenefitItem(
+          const SizedBox(height: 10),
+          const _BenefitItem(
             icon: Icons.bar_chart_rounded,
             title: 'Relatórios inteligentes',
             subtitle: 'Veja gastos por período, categoria e produto.',
@@ -801,7 +823,7 @@ class _BenefitItem extends StatelessWidget {
           width: 34,
           height: 34,
           decoration: BoxDecoration(
-            color: AppColors.primary.withValues(alpha: 0.09),
+            color: AppColors.primarySoftBackground(context),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, color: AppColors.primary, size: 18),
@@ -813,8 +835,8 @@ class _BenefitItem extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
+                style: TextStyle(
+                  color: AppColors.textPrimaryColor(context),
                   fontSize: 12.5,
                   fontWeight: FontWeight.w900,
                 ),
@@ -822,8 +844,8 @@ class _BenefitItem extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 subtitle,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
+                style: TextStyle(
+                  color: AppColors.textSecondaryColor(context),
                   fontSize: 11.5,
                   height: 1.35,
                   fontWeight: FontWeight.w600,
@@ -846,20 +868,30 @@ class _AuthAccountNote extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.06),
+        color: AppColors.primary.withValues(
+          alpha: AppColors.isDark(context) ? 0.14 : 0.06,
+        ),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.14)),
+        border: Border.all(
+          color: AppColors.primary.withValues(
+            alpha: AppColors.isDark(context) ? 0.28 : 0.14,
+          ),
+        ),
       ),
-      child: const Row(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.security_rounded, color: AppColors.primary, size: 19),
-          SizedBox(width: 9),
+          const Icon(
+            Icons.security_rounded,
+            color: AppColors.primary,
+            size: 19,
+          ),
+          const SizedBox(width: 9),
           Expanded(
             child: Text(
               'Seus dados ficam vinculados à sua conta.',
               style: TextStyle(
-                color: AppColors.textSecondary,
+                color: AppColors.textSecondaryColor(context),
                 fontSize: 11.5,
                 height: 1.35,
                 fontWeight: FontWeight.w600,
