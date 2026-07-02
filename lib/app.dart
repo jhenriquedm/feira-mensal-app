@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/theme/app_theme.dart';
+import 'core/theme/app_colors.dart';
 import 'viewmodels/auth_viewmodel.dart';
 import 'viewmodels/theme_viewmodel.dart';
 import 'views/auth/auth_view.dart';
@@ -13,14 +14,21 @@ class FeiraMensalApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeProvider);
+    final themeState = ref.watch(themeProvider);
+    final themeColor = themeState.themeColor;
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Feira Mensal',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: themeMode,
+      theme: AppTheme.lightTheme(
+        primaryColor: themeColor.primary,
+        primaryDarkColor: themeColor.primaryDark,
+      ),
+      darkTheme: AppTheme.darkTheme(
+        primaryColor: themeColor.primary,
+        primaryDarkColor: themeColor.primaryDark,
+      ),
+      themeMode: themeState.themeMode,
       home: const _AuthGate(),
     );
   }

@@ -93,6 +93,7 @@ class _MainShellState extends State<MainShell> {
   }) {
     final bool isSelected = _selectedIndex == index;
 
+    final primaryColor = AppColors.primaryColor(context);
     final unselectedColor = AppColors.textSecondaryColor(context);
 
     return Expanded(
@@ -114,7 +115,7 @@ class _MainShellState extends State<MainShell> {
               Icon(
                 icon,
                 size: 23,
-                color: isSelected ? AppColors.primary : unselectedColor,
+                color: isSelected ? primaryColor : unselectedColor,
               ),
               const SizedBox(height: 4),
               Text(
@@ -124,7 +125,7 @@ class _MainShellState extends State<MainShell> {
                 style: TextStyle(
                   fontSize: 10.5,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected ? AppColors.primary : unselectedColor,
+                  color: isSelected ? primaryColor : unselectedColor,
                 ),
               ),
             ],

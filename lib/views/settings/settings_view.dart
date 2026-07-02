@@ -21,10 +21,15 @@ class _SettingsTexts {
       'Acompanhe os dados cadastrados e gerencie suas informações.';
 
   static const appearanceSection = 'Aparência';
+
   static const themeTitle = 'Tema do app';
   static const themeSubtitle = 'Escolha entre modo claro e modo escuro.';
   static const lightTheme = 'Claro';
   static const darkTheme = 'Escuro';
+
+  static const colorTitle = 'Cor principal';
+  static const colorSubtitle =
+      'Escolha a cor usada nos botões, destaques e ações do app.';
 
   static const accountDataSection = 'Dados da conta';
 
@@ -159,7 +164,13 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                   const SizedBox(height: 16),
                   const _SettingsSection(
                     title: _SettingsTexts.appearanceSection,
-                    child: _ThemeModeCard(),
+                    child: Column(
+                      children: [
+                        _ThemeModeCard(),
+                        SizedBox(height: 12),
+                        _ThemeColorCard(),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
                   _SettingsSection(
@@ -450,6 +461,8 @@ class _CurrentUserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Container(
       padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
       decoration: BoxDecoration(
@@ -466,9 +479,9 @@ class _CurrentUserCard extends StatelessWidget {
               color: AppColors.primarySoftBackground(context),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.person_outline_rounded,
-              color: AppColors.primary,
+              color: primaryColor,
               size: 24,
             ),
           ),
@@ -531,15 +544,17 @@ class _AccountSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Container(
       padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(
+        color: primaryColor.withValues(
           alpha: AppColors.isDark(context) ? 0.13 : 0.09,
         ),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: AppColors.primary.withValues(
+          color: primaryColor.withValues(
             alpha: AppColors.isDark(context) ? 0.28 : 0.20,
           ),
         ),
@@ -549,9 +564,9 @@ class _AccountSummaryCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.dashboard_customize_outlined,
-                color: AppColors.primary,
+                color: primaryColor,
                 size: 22,
               ),
               const SizedBox(width: 8),
@@ -749,6 +764,8 @@ class _SettingsInfoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       decoration: BoxDecoration(
@@ -758,7 +775,7 @@ class _SettingsInfoTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(icon, color: AppColors.primary, size: 22),
+          Icon(icon, color: primaryColor, size: 22),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -849,8 +866,10 @@ class _ThemeModeCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeProvider);
+    final themeState = ref.watch(themeProvider);
+    final themeMode = themeState.themeMode;
     final themeViewModel = ref.read(themeProvider.notifier);
+    final primaryColor = AppColors.primaryColor(context);
 
     final isLightSelected = themeMode == ThemeMode.light;
     final isDarkSelected = themeMode == ThemeMode.dark;
@@ -867,11 +886,7 @@ class _ThemeModeCard extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.palette_outlined,
-                color: AppColors.primary,
-                size: 22,
-              ),
+              Icon(Icons.palette_outlined, color: primaryColor, size: 22),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -944,8 +959,10 @@ class _ThemeModeOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     final foregroundColor = isSelected
-        ? AppColors.primary
+        ? primaryColor
         : AppColors.textSecondaryColor(context);
 
     return InkWell(
@@ -960,9 +977,7 @@ class _ThemeModeOption extends StatelessWidget {
               : AppColors.surfaceSoftColor(context),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected
-                ? AppColors.primary
-                : AppColors.borderColor(context),
+            color: isSelected ? primaryColor : AppColors.borderColor(context),
           ),
         ),
         child: Column(
@@ -976,6 +991,147 @@ class _ThemeModeOption extends StatelessWidget {
               style: TextStyle(
                 color: foregroundColor,
                 fontSize: 12,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ThemeColorCard extends ConsumerWidget {
+  const _ThemeColorCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeState = ref.watch(themeProvider);
+    final selectedColor = themeState.themeColor;
+    final themeViewModel = ref.read(themeProvider.notifier);
+    final primaryColor = AppColors.primaryColor(context);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceColor(context),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.borderColor(context)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.color_lens_outlined, color: primaryColor, size: 22),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  _SettingsTexts.colorTitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.textPrimaryColor(context),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            _SettingsTexts.colorSubtitle,
+            softWrap: true,
+            style: TextStyle(
+              color: AppColors.textSecondaryColor(context),
+              fontSize: 11.5,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: AppThemeColor.values.map((themeColor) {
+              return _ThemeColorOption(
+                themeColor: themeColor,
+                isSelected: selectedColor == themeColor,
+                onTap: () {
+                  themeViewModel.setThemeColor(themeColor);
+                },
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ThemeColorOption extends StatelessWidget {
+  final AppThemeColor themeColor;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ThemeColorOption({
+    required this.themeColor,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = themeColor.primary;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        width: 90,
+        padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? color.withValues(alpha: AppColors.isDark(context) ? 0.22 : 0.12)
+              : AppColors.surfaceSoftColor(context),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: isSelected ? color : AppColors.borderColor(context),
+            width: isSelected ? 1.6 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.60),
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? const Icon(
+                      Icons.check_rounded,
+                      color: Colors.white,
+                      size: 17,
+                    )
+                  : null,
+            ),
+            const SizedBox(height: 7),
+            Text(
+              themeColor.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: isSelected
+                    ? color
+                    : AppColors.textSecondaryColor(context),
+                fontSize: 11.5,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -1005,6 +1161,7 @@ class _SettingsConfirmationOverlay extends StatelessWidget {
         action == _SettingsConfirmationAction.clearDeviceData;
     final isClearAllData = action == _SettingsConfirmationAction.clearAllData;
     final isLogout = action == _SettingsConfirmationAction.logout;
+    final primaryColor = AppColors.primaryColor(context);
 
     final title = switch (action) {
       _SettingsConfirmationAction.clearDeviceData =>
@@ -1036,9 +1193,7 @@ class _SettingsConfirmationOverlay extends StatelessWidget {
       _SettingsConfirmationAction.logout => _SettingsTexts.logoutDialogConfirm,
     };
 
-    final color = isClearAllData || isLogout
-        ? AppColors.danger
-        : AppColors.primary;
+    final color = isClearAllData || isLogout ? AppColors.danger : primaryColor;
 
     return Positioned.fill(
       child: Container(
