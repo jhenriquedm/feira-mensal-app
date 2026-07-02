@@ -131,6 +131,9 @@ class HomeView extends ConsumerWidget {
     required double currentMonthTotal,
     required int inProgressPurchases,
   }) {
+    final primaryColor = AppColors.primaryColor(context);
+    final primaryDarkColor = AppColors.primaryDarkColor(context);
+
     final welcomeMessage = firstName == null
         ? 'Seja bem-vindo!'
         : 'Seja bem-vindo, $firstName!';
@@ -139,15 +142,15 @@ class HomeView extends ConsumerWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.primary, AppColors.primaryDark],
+        gradient: LinearGradient(
+          colors: [primaryColor, primaryDarkColor],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(
+            color: primaryColor.withValues(
               alpha: AppColors.isDark(context) ? 0.18 : 0.25,
             ),
             blurRadius: 24,
@@ -285,6 +288,8 @@ class HomeView extends ConsumerWidget {
     required PurchaseModel? latestPurchase,
     required _CategoryHighlight? topCategory,
   }) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -304,7 +309,7 @@ class HomeView extends ConsumerWidget {
                 title: 'Compras',
                 value: purchasesCount.toString(),
                 subtitle: 'Registradas',
-                color: AppColors.primary,
+                color: primaryColor,
               ),
             ),
             const SizedBox(width: 12),
@@ -570,17 +575,18 @@ class _LatestPurchaseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasPurchase = purchase != null;
+    final primaryColor = AppColors.primaryColor(context);
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(
+        color: primaryColor.withValues(
           alpha: AppColors.isDark(context) ? 0.13 : 0.08,
         ),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: AppColors.primary.withValues(
+          color: primaryColor.withValues(
             alpha: AppColors.isDark(context) ? 0.28 : 0.18,
           ),
         ),
@@ -591,16 +597,12 @@ class _LatestPurchaseCard extends StatelessWidget {
             width: 46,
             height: 46,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(
+              color: primaryColor.withValues(
                 alpha: AppColors.isDark(context) ? 0.18 : 0.12,
               ),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(
-              Icons.history_rounded,
-              color: AppColors.primary,
-              size: 24,
-            ),
+            child: Icon(Icons.history_rounded, color: primaryColor, size: 24),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -691,6 +693,8 @@ class _HomeFeatureCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Material(
       color: AppColors.surfaceColor(context),
       borderRadius: BorderRadius.circular(22),
@@ -712,11 +716,7 @@ class _HomeFeatureCard extends StatelessWidget {
                   color: AppColors.primarySoftBackground(context),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Icon(
-                  Icons.shopping_basket_outlined,
-                  color: AppColors.primary,
-                  size: 24,
-                ),
+                child: Icon(icon, color: primaryColor, size: 24),
               ),
               const SizedBox(width: 12),
               Expanded(
