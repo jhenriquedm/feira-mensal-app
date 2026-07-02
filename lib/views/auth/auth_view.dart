@@ -226,20 +226,23 @@ class _AuthTopHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+    final primaryDarkColor = AppColors.primaryDarkColor(context);
+
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       padding: const EdgeInsets.fromLTRB(22, 24, 22, 24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.primary, AppColors.primaryDark],
+        gradient: LinearGradient(
+          colors: [primaryColor, primaryDarkColor],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(
+            color: primaryColor.withValues(
               alpha: AppColors.isDark(context) ? 0.18 : 0.24,
             ),
             blurRadius: 24,
@@ -362,6 +365,8 @@ class _AuthFormPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
@@ -400,7 +405,7 @@ class _AuthFormPanel extends StatelessWidget {
                       ? Icons.assignment_ind_outlined
                       : Icons.lock_outline_rounded,
                   size: 21,
-                  color: AppColors.primary,
+                  color: primaryColor,
                 ),
               ],
             ),
@@ -580,6 +585,8 @@ class _AuthFormPanel extends StatelessWidget {
     List<TextInputFormatter>? inputFormatters,
     Widget? suffixIcon,
   }) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
@@ -615,7 +622,7 @@ class _AuthFormPanel extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(17),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.6),
+          borderSide: BorderSide(color: primaryColor, width: 1.6),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(17),
@@ -691,6 +698,8 @@ class _AuthModeSwitcher extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -705,7 +714,7 @@ class _AuthModeSwitcher extends StatelessWidget {
             isRegisterMode
                 ? Icons.login_rounded
                 : Icons.person_add_alt_1_rounded,
-            color: AppColors.primary,
+            color: primaryColor,
             size: 21,
           ),
           const SizedBox(width: 10),
@@ -739,6 +748,8 @@ class _AuthBenefitsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 15),
@@ -761,11 +772,7 @@ class _AuthBenefitsCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.auto_awesome_rounded,
-                color: AppColors.primary,
-                size: 21,
-              ),
+              Icon(Icons.auto_awesome_rounded, color: primaryColor, size: 21),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -816,6 +823,8 @@ class _BenefitItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -826,7 +835,7 @@ class _BenefitItem extends StatelessWidget {
             color: AppColors.primarySoftBackground(context),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: AppColors.primary, size: 18),
+          child: Icon(icon, color: primaryColor, size: 18),
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -864,16 +873,18 @@ class _AuthAccountNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(
+        color: primaryColor.withValues(
           alpha: AppColors.isDark(context) ? 0.14 : 0.06,
         ),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: AppColors.primary.withValues(
+          color: primaryColor.withValues(
             alpha: AppColors.isDark(context) ? 0.28 : 0.14,
           ),
         ),
@@ -881,11 +892,7 @@ class _AuthAccountNote extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
-            Icons.security_rounded,
-            color: AppColors.primary,
-            size: 19,
-          ),
+          Icon(Icons.security_rounded, color: primaryColor, size: 19),
           const SizedBox(width: 9),
           Expanded(
             child: Text(
