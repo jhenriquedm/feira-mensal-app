@@ -296,7 +296,9 @@ class HomeView extends ConsumerWidget {
               borderRadius: BorderRadius.circular(15),
             ),
             child: Icon(
-              isOfflineMode ? Icons.wifi_off_rounded : Icons.cloud_done_outlined,
+              isOfflineMode
+                  ? Icons.wifi_off_rounded
+                  : Icons.cloud_done_outlined,
               color: statusColor,
               size: 22,
             ),
