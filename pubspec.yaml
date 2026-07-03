@@ -46,5 +46,32 @@ dev_dependencies:
 
   flutter_lints: ^6.0.0
 
+  # Ícone do app
+  flutter_launcher_icons: ^0.14.4
+
+  # Tela de abertura
+  flutter_native_splash: ^2.4.8
+
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/branding/app_icon.png
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/branding/app_icon.png
+  adaptive_icon_background: "#16A34A"
+  adaptive_icon_foreground: assets/branding/app_icon.png
+  remove_alpha_ios: true
+
+flutter_native_splash:
+  color: "#16A34A"
+  image: assets/branding/app_icon.png
+
+  android_12:
+    color: "#16A34A"
+    image: assets/branding/app_icon.png
+
+  web: false

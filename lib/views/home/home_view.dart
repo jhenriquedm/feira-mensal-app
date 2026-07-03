@@ -220,13 +220,11 @@ class _HomeViewState extends ConsumerState<HomeView> {
         isError: true,
       );
     } finally {
-      if (!mounted) {
-        return;
+      if (mounted) {
+        setState(() {
+          _isSyncingNow = false;
+        });
       }
-
-      setState(() {
-        _isSyncingNow = false;
-      });
     }
   }
 

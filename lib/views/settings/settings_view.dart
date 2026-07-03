@@ -448,13 +448,11 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
 
       _showFeedback(message: _SettingsTexts.syncGenericError, isError: true);
     } finally {
-      if (!mounted) {
-        return;
+      if (mounted) {
+        setState(() {
+          _isSyncingNow = false;
+        });
       }
-
-      setState(() {
-        _isSyncingNow = false;
-      });
     }
   }
 
