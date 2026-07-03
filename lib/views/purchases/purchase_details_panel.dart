@@ -473,6 +473,7 @@ class _PurchaseDetailsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
     final statusColor = purchase.isCompleted
         ? AppColors.success
         : AppColors.warning;
@@ -487,7 +488,7 @@ class _PurchaseDetailsHeader extends StatelessWidget {
                 ? AppColors.success.withValues(
                     alpha: AppColors.isDark(context) ? 0.18 : 0.12,
                   )
-                : AppColors.primary.withValues(
+                : primaryColor.withValues(
                     alpha: AppColors.isDark(context) ? 0.18 : 0.12,
                   ),
             borderRadius: BorderRadius.circular(16),
@@ -496,7 +497,7 @@ class _PurchaseDetailsHeader extends StatelessWidget {
             purchase.isCompleted
                 ? Icons.check_circle_outline_rounded
                 : Icons.shopping_cart_checkout_rounded,
-            color: purchase.isCompleted ? AppColors.success : AppColors.primary,
+            color: purchase.isCompleted ? AppColors.success : primaryColor,
           ),
         ),
         const SizedBox(width: 12),
@@ -554,6 +555,7 @@ class _PurchaseDetailsSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
     final statusColor = purchase.isCompleted
         ? AppColors.success
         : AppColors.warning;
@@ -657,7 +659,7 @@ class _PurchaseDetailsSummary extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: AppColors.primary,
+                        color: primaryColor,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -679,6 +681,7 @@ class _AdvancedPurchaseSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
     final categoryTotals = _buildCategoryTotals(purchase.items);
     final mostExpensiveItem = _findMostExpensiveItem(purchase.items);
 
@@ -696,12 +699,12 @@ class _AdvancedPurchaseSummary extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(
+        color: primaryColor.withValues(
           alpha: AppColors.isDark(context) ? 0.13 : 0.06,
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppColors.primary.withValues(
+          color: primaryColor.withValues(
             alpha: AppColors.isDark(context) ? 0.28 : 0.16,
           ),
         ),
@@ -711,11 +714,7 @@ class _AdvancedPurchaseSummary extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.auto_graph_rounded,
-                color: AppColors.primary,
-                size: 20,
-              ),
+              Icon(Icons.auto_graph_rounded, color: primaryColor, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -738,7 +737,7 @@ class _AdvancedPurchaseSummary extends StatelessWidget {
                   value: _formatQuantity(totalQuantity),
                   subtitle: 'Unidades somadas',
                   icon: Icons.numbers_rounded,
-                  color: AppColors.primary,
+                  color: primaryColor,
                 ),
               ),
               const SizedBox(width: 10),
@@ -771,7 +770,7 @@ class _AdvancedPurchaseSummary extends StatelessWidget {
             subtitle: mostExpensiveItem == null
                 ? 'Adicione itens para visualizar'
                 : '${mostExpensiveItem.productBrand} • ${_detailsCurrencyFormatter.format(mostExpensiveItem.total)}',
-            color: AppColors.primary,
+            color: primaryColor,
           ),
           if (categoryTotals.isNotEmpty) ...[
             const SizedBox(height: 14),
@@ -1006,6 +1005,8 @@ class _CategoryTotalRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Container(
       padding: const EdgeInsets.fromLTRB(11, 10, 11, 10),
       decoration: BoxDecoration(
@@ -1032,8 +1033,8 @@ class _CategoryTotalRow extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 _detailsCurrencyFormatter.format(category.total),
-                style: const TextStyle(
-                  color: AppColors.primary,
+                style: TextStyle(
+                  color: primaryColor,
                   fontSize: 12,
                   fontWeight: FontWeight.w900,
                 ),
@@ -1046,10 +1047,10 @@ class _CategoryTotalRow extends StatelessWidget {
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 6,
-              backgroundColor: AppColors.primary.withValues(
+              backgroundColor: primaryColor.withValues(
                 alpha: AppColors.isDark(context) ? 0.18 : 0.10,
               ),
-              color: AppColors.primary,
+              color: primaryColor,
             ),
           ),
         ],
@@ -1276,6 +1277,8 @@ class _ItemControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Column(
       children: [
         TextField(
@@ -1317,10 +1320,7 @@ class _ItemControls extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(
-                color: AppColors.primary,
-                width: 1.5,
-              ),
+              borderSide: BorderSide(color: primaryColor, width: 1.5),
             ),
           ),
         ),
@@ -1618,6 +1618,8 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     final availableProducts = widget.products.where((product) {
       if (widget.item != null && product.id == widget.item!.productId) {
         return true;
@@ -1772,9 +1774,9 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
                                         ),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
-                                      child: const Icon(
+                                      child: Icon(
                                         Icons.shopping_basket_outlined,
-                                        color: AppColors.primary,
+                                        color: primaryColor,
                                         size: 18,
                                       ),
                                     ),
@@ -1893,7 +1895,7 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(
+                color: primaryColor.withValues(
                   alpha: AppColors.isDark(context) ? 0.14 : 0.08,
                 ),
                 borderRadius: BorderRadius.circular(16),
@@ -1914,8 +1916,8 @@ class _PurchaseItemFormState extends ConsumerState<_PurchaseItemForm> {
                       _detailsCurrencyFormatter.format(_currentTotal),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.primary,
+                      style: TextStyle(
+                        color: primaryColor,
                         fontSize: 16,
                         fontWeight: FontWeight.w900,
                       ),
@@ -2056,6 +2058,8 @@ class _PurchaseItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Container(
       padding: const EdgeInsets.fromLTRB(13, 13, 8, 13),
       decoration: BoxDecoration(
@@ -2072,9 +2076,9 @@ class _PurchaseItemCard extends StatelessWidget {
               color: AppColors.primarySoftBackground(context),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.shopping_basket_outlined,
-              color: AppColors.primary,
+              color: primaryColor,
               size: 22,
             ),
           ),
@@ -2109,8 +2113,8 @@ class _PurchaseItemCard extends StatelessWidget {
                   _detailsCurrencyFormatter.format(item.total),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: primaryColor,
                     fontSize: 14,
                     fontWeight: FontWeight.w900,
                   ),
@@ -2135,7 +2139,7 @@ class _PurchaseItemCard extends StatelessWidget {
                 }
               },
               itemBuilder: (context) {
-                return const [
+                return [
                   PopupMenuItem(
                     value: 'edit',
                     child: Row(
@@ -2143,14 +2147,14 @@ class _PurchaseItemCard extends StatelessWidget {
                         Icon(
                           Icons.edit_outlined,
                           size: 20,
-                          color: AppColors.primary,
+                          color: primaryColor,
                         ),
-                        SizedBox(width: 10),
-                        Text('Editar'),
+                        const SizedBox(width: 10),
+                        const Text('Editar'),
                       ],
                     ),
                   ),
-                  PopupMenuItem(
+                  const PopupMenuItem(
                     value: 'delete',
                     child: Row(
                       children: [
@@ -2392,6 +2396,8 @@ class _CurrencyInputFormatter extends TextInputFormatter {
 }
 
 InputDecoration _detailsInputDecoration(BuildContext context, String label) {
+  final primaryColor = AppColors.primaryColor(context);
+
   return InputDecoration(
     labelText: label,
     labelStyle: TextStyle(color: AppColors.textSecondaryColor(context)),
@@ -2409,7 +2415,7 @@ InputDecoration _detailsInputDecoration(BuildContext context, String label) {
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: const BorderSide(color: AppColors.primary, width: 1.6),
+      borderSide: BorderSide(color: primaryColor, width: 1.6),
     ),
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
