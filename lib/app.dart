@@ -19,7 +19,7 @@ class FeiraMensalApp extends ConsumerWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Feira Mensal',
+      title: 'Feira Fácil',
       theme: AppTheme.lightTheme(
         primaryColor: themeColor.primary,
         primaryDarkColor: themeColor.primaryDark,

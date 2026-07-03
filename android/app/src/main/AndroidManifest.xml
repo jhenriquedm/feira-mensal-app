@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="feira_mensal_app"
+        android:label="Feira Fácil"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
