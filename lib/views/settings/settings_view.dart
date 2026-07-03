@@ -26,6 +26,15 @@ class _SettingsTexts {
   static const syncOfflineTitle = 'Modo offline';
   static const syncOfflineSubtitle =
       'Você está usando os dados salvos neste dispositivo.';
+  static const syncNow = 'Sincronizar agora';
+  static const syncing = 'Sincronizando...';
+  static const syncSuccess = 'Sincronização concluída com sucesso.';
+  static const syncOfflineError =
+      'Conecte-se à internet para sincronizar os dados.';
+  static const syncPendingWarning =
+      'Ainda existem alterações pendentes. Verifique sua conexão e tente novamente.';
+  static const syncGenericError =
+      'Não foi possível sincronizar agora. Tente novamente.';
   static const lastAccess = 'Último acesso';
   static const lastOnlineLogin = 'Último login online';
   static const firstOnlineLogin = 'Primeiro login online';
@@ -129,6 +138,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
   bool _isConfirmingAction = false;
   bool _isProfileFormVisible = false;
   bool _isSavingProfile = false;
+  bool _isSyncingNow = false;
   Timer? _feedbackTimer;
 
   @override
@@ -202,6 +212,8 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                         authState: authState,
                         productsState: productsState,
                         purchasesState: purchasesState,
+                        isSyncingNow: _isSyncingNow,
+                        onSyncNow: _syncNow,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -390,6 +402,60 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
     });
 
     _showFeedback(message: _SettingsTexts.profileUpdateSuccess, isError: false);
+  }
+
+  Future<void> _syncNow() async {
+    if (_isSyncingNow) {
+      return;
+    }
+
+    final authState = ref.read(authProvider);
+
+    if (authState.isOfflineMode) {
+      _showFeedback(message: _SettingsTexts.syncOfflineError, isError: true);
+      return;
+    }
+
+    setState(() {
+      _isSyncingNow = true;
+    });
+
+    try {
+      await ref.read(productsProvider.notifier).syncNow();
+      await ref.read(purchasesProvider.notifier).syncNow();
+
+      if (!mounted) {
+        return;
+      }
+
+      final productsState = ref.read(productsProvider);
+      final purchasesState = ref.read(purchasesProvider);
+      final pendingCount =
+          productsState.pendingSyncCount + purchasesState.pendingSyncCount;
+
+      if (pendingCount == 0) {
+        _showFeedback(message: _SettingsTexts.syncSuccess, isError: false);
+      } else {
+        _showFeedback(
+          message: _SettingsTexts.syncPendingWarning,
+          isError: true,
+        );
+      }
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      _showFeedback(message: _SettingsTexts.syncGenericError, isError: true);
+    } finally {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isSyncingNow = false;
+      });
+    }
   }
 
   Future<void> _confirmAction() async {
@@ -964,11 +1030,15 @@ class _SyncStatusCard extends StatelessWidget {
   final AuthState authState;
   final ProductsState productsState;
   final PurchasesState purchasesState;
+  final bool isSyncingNow;
+  final VoidCallback onSyncNow;
 
   const _SyncStatusCard({
     required this.authState,
     required this.productsState,
     required this.purchasesState,
+    required this.isSyncingNow,
+    required this.onSyncNow,
   });
 
   @override
@@ -1133,6 +1203,26 @@ class _SyncStatusCard extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: isOfflineMode || isSyncingNow ? null : onSyncNow,
+              icon: isSyncingNow
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.sync_rounded, size: 18),
+              label: Text(
+                isSyncingNow ? _SettingsTexts.syncing : _SettingsTexts.syncNow,
+              ),
             ),
           ),
           const SizedBox(height: 14),

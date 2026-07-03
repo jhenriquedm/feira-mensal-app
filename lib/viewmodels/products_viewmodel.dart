@@ -742,6 +742,22 @@ class ProductsViewModel extends StateNotifier<ProductsState> {
     );
   }
 
+  Future<bool> syncNow() async {
+    if (userId.trim().isEmpty || userId == 'no_user') {
+      return false;
+    }
+
+    if (_isSyncing) {
+      _syncAgainRequested = true;
+      return false;
+    }
+
+    await _downloadProductsDataFromFirestore();
+    await _trySyncProductsData();
+
+    return !state.hasPendingSyncChanges;
+  }
+
   Future<void> _trySyncProductsData() async {
     if (userId.trim().isEmpty || userId == 'no_user') {
       return;

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -15,7 +17,7 @@ final NumberFormat _homeCurrencyFormatter = NumberFormat.currency(
 
 final DateFormat _homeDateTimeFormatter = DateFormat('dd/MM/yyyy HH:mm');
 
-class HomeView extends ConsumerWidget {
+class HomeView extends ConsumerStatefulWidget {
   final VoidCallback? onProductsTap;
   final VoidCallback? onPurchasesTap;
   final VoidCallback? onReportsTap;
@@ -28,7 +30,23 @@ class HomeView extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeView> createState() => _HomeViewState();
+}
+
+class _HomeViewState extends ConsumerState<HomeView> {
+  String? _feedbackMessage;
+  bool _feedbackIsError = false;
+  bool _isSyncingNow = false;
+  Timer? _feedbackTimer;
+
+  @override
+  void dispose() {
+    _feedbackTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final productsState = ref.watch(productsProvider);
     final purchasesState = ref.watch(purchasesProvider);
@@ -81,8 +99,22 @@ class HomeView extends ConsumerWidget {
                 authState: authState,
                 productsState: productsState,
                 purchasesState: purchasesState,
+                isSyncingNow: _isSyncingNow,
+                onSyncNow: _syncNow,
               ),
-              const SizedBox(height: 24),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                child: _feedbackMessage == null
+                    ? const SizedBox(height: 24)
+                    : Padding(
+                        key: ValueKey<String>(_feedbackMessage!),
+                        padding: const EdgeInsets.only(top: 12, bottom: 12),
+                        child: _HomeFeedback(
+                          message: _feedbackMessage!,
+                          isError: _feedbackIsError,
+                        ),
+                      ),
+              ),
               _buildSummaryCard(
                 context,
                 currentMonthTotal: currentMonthTotal,
@@ -111,27 +143,115 @@ class HomeView extends ConsumerWidget {
                 title: 'Produtos',
                 subtitle: 'Cadastre e organize itens do mercado',
                 icon: Icons.shopping_basket_outlined,
-                onTap: onProductsTap ?? () {},
+                onTap: widget.onProductsTap ?? () {},
               ),
               const SizedBox(height: 12),
               _HomeFeatureCard(
                 title: 'Compras',
                 subtitle: 'Registre sua feira mensal',
                 icon: Icons.receipt_long_outlined,
-                onTap: onPurchasesTap ?? () {},
+                onTap: widget.onPurchasesTap ?? () {},
               ),
               const SizedBox(height: 12),
               _HomeFeatureCard(
                 title: 'Relatórios',
                 subtitle: 'Acompanhe gastos e evolução',
                 icon: Icons.bar_chart_rounded,
-                onTap: onReportsTap ?? () {},
+                onTap: widget.onReportsTap ?? () {},
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _syncNow() async {
+    if (_isSyncingNow) {
+      return;
+    }
+
+    final authState = ref.read(authProvider);
+
+    if (authState.isOfflineMode) {
+      _showFeedback(
+        message: 'Conecte-se à internet para sincronizar os dados.',
+        isError: true,
+      );
+      return;
+    }
+
+    setState(() {
+      _isSyncingNow = true;
+    });
+
+    try {
+      await ref.read(productsProvider.notifier).syncNow();
+      await ref.read(purchasesProvider.notifier).syncNow();
+
+      if (!mounted) {
+        return;
+      }
+
+      final productsState = ref.read(productsProvider);
+      final purchasesState = ref.read(purchasesProvider);
+      final pendingCount =
+          productsState.pendingSyncCount + purchasesState.pendingSyncCount;
+
+      if (pendingCount == 0) {
+        _showFeedback(
+          message: 'Sincronização concluída com sucesso.',
+          isError: false,
+        );
+      } else {
+        _showFeedback(
+          message:
+              'Ainda existem alterações pendentes. Verifique sua conexão e tente novamente.',
+          isError: true,
+        );
+      }
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      _showFeedback(
+        message: 'Não foi possível sincronizar agora. Tente novamente.',
+        isError: true,
+      );
+    } finally {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isSyncingNow = false;
+      });
+    }
+  }
+
+  void _showFeedback({required String message, required bool isError}) {
+    _feedbackTimer?.cancel();
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _feedbackMessage = message;
+      _feedbackIsError = isError;
+    });
+
+    _feedbackTimer = Timer(const Duration(seconds: 4), () {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _feedbackMessage = null;
+        _feedbackIsError = false;
+      });
+    });
   }
 
   Widget _buildHeader(
@@ -257,6 +377,8 @@ class HomeView extends ConsumerWidget {
     required AuthState authState,
     required ProductsState productsState,
     required PurchasesState purchasesState,
+    required bool isSyncingNow,
+    required VoidCallback onSyncNow,
   }) {
     final session = authState.offlineSession;
     final isOfflineMode = authState.isOfflineMode;
@@ -434,6 +556,26 @@ class HomeView extends ConsumerWidget {
                     color: AppColors.textSecondaryColor(context),
                     fontSize: 10.8,
                     fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: isOfflineMode || isSyncingNow ? null : onSyncNow,
+                    icon: isSyncingNow
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.sync_rounded, size: 18),
+                    label: Text(
+                      isSyncingNow ? 'Sincronizando...' : 'Sincronizar agora',
+                    ),
                   ),
                 ),
               ],
@@ -668,6 +810,56 @@ class HomeView extends ConsumerWidget {
     }
 
     return firstName;
+  }
+}
+
+class _HomeFeedback extends StatelessWidget {
+  final String message;
+  final bool isError;
+
+  const _HomeFeedback({required this.message, required this.isError});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isError ? AppColors.danger : AppColors.success;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: AppColors.isDark(context) ? 0.18 : 0.10),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: color.withValues(
+            alpha: AppColors.isDark(context) ? 0.34 : 0.25,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isError ? Icons.error_outline_rounded : Icons.check_circle_outline,
+            color: color,
+            size: 20,
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              message,
+              softWrap: true,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: color,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w800,
+                height: 1.3,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

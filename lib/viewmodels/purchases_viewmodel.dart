@@ -623,6 +623,22 @@ class PurchasesViewModel extends StateNotifier<PurchasesState> {
     );
   }
 
+  Future<bool> syncNow() async {
+    if (userId.trim().isEmpty || userId == 'no_user') {
+      return false;
+    }
+
+    if (_isSyncing) {
+      _syncAgainRequested = true;
+      return false;
+    }
+
+    await _downloadPurchasesFromFirestore();
+    await _trySyncPurchases();
+
+    return !state.hasPendingSyncChanges;
+  }
+
   Future<void> _trySyncPurchases() async {
     if (userId.trim().isEmpty || userId == 'no_user') {
       return;
