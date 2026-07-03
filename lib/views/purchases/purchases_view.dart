@@ -343,6 +343,8 @@ class _PurchasesViewState extends ConsumerState<PurchasesView> {
         _searchController.text.trim().isNotEmpty ||
         _statusFilter != _PurchaseStatusFilter.all;
 
+    final primaryColor = AppColors.primaryColor(context);
+
     return Scaffold(
       backgroundColor: AppColors.backgroundColor(context),
       body: SafeArea(
@@ -453,7 +455,7 @@ class _PurchasesViewState extends ConsumerState<PurchasesView> {
           ? null
           : FloatingActionButton.extended(
               tooltip: 'Adicionar compra',
-              backgroundColor: AppColors.primary,
+              backgroundColor: primaryColor,
               foregroundColor: Colors.white,
               onPressed: _openCreatePurchaseForm,
               icon: const Icon(Icons.add),
@@ -485,6 +487,8 @@ class _PurchasesHeader extends StatelessWidget {
     final totalValue = state.purchases.fold<double>(0, (sum, purchase) {
       return sum + purchase.total;
     });
+
+    final primaryColor = AppColors.primaryColor(context);
 
     return Container(
       width: double.infinity,
@@ -549,12 +553,12 @@ class _PurchasesHeader extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(
+                color: primaryColor.withValues(
                   alpha: AppColors.isDark(context) ? 0.14 : 0.08,
                 ),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: AppColors.primary.withValues(
+                  color: primaryColor.withValues(
                     alpha: AppColors.isDark(context) ? 0.28 : 0.16,
                   ),
                 ),
@@ -565,14 +569,14 @@ class _PurchasesHeader extends StatelessWidget {
                     width: 38,
                     height: 38,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(
+                      color: primaryColor.withValues(
                         alpha: AppColors.isDark(context) ? 0.18 : 0.12,
                       ),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.payments_outlined,
-                      color: AppColors.primary,
+                      color: primaryColor,
                       size: 20,
                     ),
                   ),
@@ -594,8 +598,8 @@ class _PurchasesHeader extends StatelessWidget {
                           _currencyFormatter.format(totalValue),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.primary,
+                          style: TextStyle(
+                            color: primaryColor,
                             fontSize: 17,
                             fontWeight: FontWeight.w900,
                           ),
@@ -643,6 +647,8 @@ class _PurchasesControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Container(
       color: AppColors.backgroundColor(context),
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
@@ -691,10 +697,7 @@ class _PurchasesControls extends StatelessWidget {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(18),
-                borderSide: const BorderSide(
-                  color: AppColors.primary,
-                  width: 1.5,
-                ),
+                borderSide: BorderSide(color: primaryColor, width: 1.5),
               ),
             ),
           ),
@@ -963,6 +966,7 @@ class _PurchaseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isCompleted = purchase.isCompleted;
+    final primaryColor = AppColors.primaryColor(context);
 
     return Card(
       color: AppColors.surfaceColor(context),
@@ -985,7 +989,7 @@ class _PurchaseCard extends StatelessWidget {
                           ? AppColors.success.withValues(
                               alpha: AppColors.isDark(context) ? 0.18 : 0.11,
                             )
-                          : AppColors.primary.withValues(
+                          : primaryColor.withValues(
                               alpha: AppColors.isDark(context) ? 0.18 : 0.11,
                             ),
                       borderRadius: BorderRadius.circular(15),
@@ -994,9 +998,7 @@ class _PurchaseCard extends StatelessWidget {
                       isCompleted
                           ? Icons.check_circle_outline_rounded
                           : Icons.shopping_cart_checkout_rounded,
-                      color: isCompleted
-                          ? AppColors.success
-                          : AppColors.primary,
+                      color: isCompleted ? AppColors.success : primaryColor,
                     ),
                   ),
                   const SizedBox(width: 13),
@@ -1057,7 +1059,7 @@ class _PurchaseCard extends StatelessWidget {
                       }
                     },
                     itemBuilder: (context) {
-                      return const [
+                      return [
                         PopupMenuItem(
                           value: 'edit',
                           child: Row(
@@ -1065,14 +1067,14 @@ class _PurchaseCard extends StatelessWidget {
                               Icon(
                                 Icons.edit_outlined,
                                 size: 20,
-                                color: AppColors.primary,
+                                color: primaryColor,
                               ),
-                              SizedBox(width: 10),
-                              Text('Editar'),
+                              const SizedBox(width: 10),
+                              const Text('Editar'),
                             ],
                           ),
                         ),
-                        PopupMenuItem(
+                        const PopupMenuItem(
                           value: 'delete',
                           child: Row(
                             children: [
@@ -1134,7 +1136,7 @@ class _PurchaseCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(
-                                color: AppColors.primary,
+                                color: primaryColor,
                                 fontWeight: FontWeight.w800,
                               ),
                         ),
@@ -1226,6 +1228,8 @@ class _EmptyPurchasesState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(30, 30, 30, 100),
@@ -1239,10 +1243,10 @@ class _EmptyPurchasesState extends StatelessWidget {
                 color: AppColors.primarySoftBackground(context),
                 borderRadius: BorderRadius.circular(27),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.shopping_cart_checkout_rounded,
                 size: 40,
-                color: AppColors.primary,
+                color: primaryColor,
               ),
             ),
             const SizedBox(height: 20),
@@ -1757,6 +1761,7 @@ class _InlineCalendar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
     final safeSelectedDate = selectedDate.isAfter(lastAllowedDate)
         ? lastAllowedDate
         : selectedDate;
@@ -1774,7 +1779,7 @@ class _InlineCalendar extends StatelessWidget {
       child: Theme(
         data: Theme.of(context).copyWith(
           colorScheme: Theme.of(context).colorScheme.copyWith(
-            primary: AppColors.primary,
+            primary: primaryColor,
             surface: AppColors.surfaceColor(context),
             onSurface: AppColors.textPrimaryColor(context),
           ),
@@ -1929,6 +1934,8 @@ Widget _purchaseTextField(
 }
 
 InputDecoration _purchaseInputDecoration(BuildContext context, String label) {
+  final primaryColor = AppColors.primaryColor(context);
+
   return InputDecoration(
     labelText: label,
     labelStyle: TextStyle(color: AppColors.textSecondaryColor(context)),
@@ -1946,7 +1953,7 @@ InputDecoration _purchaseInputDecoration(BuildContext context, String label) {
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: const BorderSide(color: AppColors.primary, width: 1.6),
+      borderSide: BorderSide(color: primaryColor, width: 1.6),
     ),
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
