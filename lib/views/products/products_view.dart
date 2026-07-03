@@ -151,6 +151,8 @@ class _ProductsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
@@ -188,7 +190,7 @@ class _ProductsHeader extends StatelessWidget {
                   icon: Icons.shopping_basket_outlined,
                   label: 'Produtos',
                   value: productsCount,
-                  color: AppColors.primary,
+                  color: primaryColor,
                 ),
               ),
               const SizedBox(width: 10),
@@ -324,6 +326,8 @@ class _ManualTabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Expanded(
       child: Material(
         color: selected ? AppColors.surfaceColor(context) : Colors.transparent,
@@ -336,7 +340,7 @@ class _ManualTabButton extends StatelessWidget {
               label,
               style: TextStyle(
                 color: selected
-                    ? AppColors.primary
+                    ? primaryColor
                     : AppColors.textSecondaryColor(context),
                 fontSize: 13,
                 fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
@@ -365,6 +369,7 @@ class _ProductsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final products = viewModel.sortedProducts;
+    final primaryColor = AppColors.primaryColor(context);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundColor(context),
@@ -420,7 +425,7 @@ class _ProductsTab extends StatelessWidget {
             ),
       floatingActionButton: FloatingActionButton(
         tooltip: 'Adicionar produto',
-        backgroundColor: AppColors.primary,
+        backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         onPressed: () {
           _showProductDialog(context, state, viewModel, linkedProductIds);
@@ -466,6 +471,8 @@ class _ProductsTab extends StatelessWidget {
         builder: (dialogContext) {
           return StatefulBuilder(
             builder: (context, setState) {
+              final primaryColor = AppColors.primaryColor(context);
+
               void showDialogMessage(String message, {bool isError = true}) {
                 setState(() {
                   dialogMessage = message;
@@ -609,8 +616,8 @@ class _ProductsTab extends StatelessWidget {
                           const SizedBox(height: 12),
                           SwitchListTile(
                             value: isActive,
-                            activeThumbColor: AppColors.primary,
-                            activeTrackColor: AppColors.primary.withValues(
+                            activeThumbColor: primaryColor,
+                            activeTrackColor: primaryColor.withValues(
                               alpha: 0.35,
                             ),
                             contentPadding: EdgeInsets.zero,
@@ -817,6 +824,8 @@ class _ProductListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     final productColor = product.isActive
         ? AppColors.textPrimaryColor(context)
         : AppColors.textSecondaryColor(context);
@@ -832,7 +841,7 @@ class _ProductListCard extends StatelessWidget {
           child: Icon(
             Icons.shopping_basket_outlined,
             color: product.isActive
-                ? AppColors.primary
+                ? primaryColor
                 : AppColors.textSecondaryColor(context),
           ),
         ),
@@ -881,18 +890,16 @@ class _ProductListCard extends StatelessWidget {
             }
           },
           itemBuilder: (context) {
+            final primaryColor = AppColors.primaryColor(context);
+
             return [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'edit',
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.edit_outlined,
-                      size: 20,
-                      color: AppColors.primary,
-                    ),
-                    SizedBox(width: 10),
-                    Text('Editar'),
+                    Icon(Icons.edit_outlined, size: 20, color: primaryColor),
+                    const SizedBox(width: 10),
+                    const Text('Editar'),
                   ],
                 ),
               ),
@@ -923,18 +930,20 @@ class _LinkedBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(
+        color: primaryColor.withValues(
           alpha: AppColors.isDark(context) ? 0.20 : 0.10,
         ),
         borderRadius: BorderRadius.circular(30),
       ),
-      child: const Text(
+      child: Text(
         'Usado',
         style: TextStyle(
-          color: AppColors.primary,
+          color: primaryColor,
           fontSize: 10,
           fontWeight: FontWeight.w800,
         ),
@@ -948,30 +957,32 @@ class _LinkedProductWarning extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(
+        color: primaryColor.withValues(
           alpha: AppColors.isDark(context) ? 0.16 : 0.09,
         ),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: AppColors.primary.withValues(
+          color: primaryColor.withValues(
             alpha: AppColors.isDark(context) ? 0.30 : 0.22,
           ),
         ),
       ),
-      child: const Row(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.info_outline_rounded, size: 19, color: AppColors.primary),
-          SizedBox(width: 8),
+          Icon(Icons.info_outline_rounded, size: 19, color: primaryColor),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
               _ProductsMessages.productLinkedInfo,
               style: TextStyle(
-                color: AppColors.primary,
+                color: primaryColor,
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
                 height: 1.35,
@@ -998,6 +1009,7 @@ class _CategoriesTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final categories = viewModel.sortedCategories;
+    final primaryColor = AppColors.primaryColor(context);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundColor(context),
@@ -1037,7 +1049,7 @@ class _CategoriesTab extends StatelessWidget {
             ),
       floatingActionButton: FloatingActionButton(
         tooltip: 'Adicionar categoria',
-        backgroundColor: AppColors.primary,
+        backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         onPressed: () {
           _showCategoryDialog(context, state, viewModel);
@@ -1065,6 +1077,8 @@ class _CategoriesTab extends StatelessWidget {
         builder: (dialogContext) {
           return StatefulBuilder(
             builder: (context, setState) {
+              final primaryColor = AppColors.primaryColor(context);
+
               void showDialogMessage(String message) {
                 setState(() {
                   dialogMessage = message;
@@ -1115,8 +1129,8 @@ class _CategoriesTab extends StatelessWidget {
                           const SizedBox(height: 12),
                           SwitchListTile(
                             value: isActive,
-                            activeThumbColor: AppColors.primary,
-                            activeTrackColor: AppColors.primary.withValues(
+                            activeThumbColor: primaryColor,
+                            activeTrackColor: primaryColor.withValues(
                               alpha: 0.35,
                             ),
                             contentPadding: EdgeInsets.zero,
@@ -1308,6 +1322,8 @@ class _CategoryGridCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     final categoryColor = category.isActive
         ? AppColors.textPrimaryColor(context)
         : AppColors.textSecondaryColor(context);
@@ -1338,7 +1354,9 @@ class _CategoryGridCard extends StatelessWidget {
                 }
               },
               itemBuilder: (context) {
-                return const [
+                final primaryColor = AppColors.primaryColor(context);
+
+                return [
                   PopupMenuItem(
                     value: 'edit',
                     child: Row(
@@ -1346,14 +1364,14 @@ class _CategoryGridCard extends StatelessWidget {
                         Icon(
                           Icons.edit_outlined,
                           size: 20,
-                          color: AppColors.primary,
+                          color: primaryColor,
                         ),
-                        SizedBox(width: 10),
-                        Text('Editar'),
+                        const SizedBox(width: 10),
+                        const Text('Editar'),
                       ],
                     ),
                   ),
-                  PopupMenuItem(
+                  const PopupMenuItem(
                     value: 'delete',
                     child: Row(
                       children: [
@@ -1394,7 +1412,7 @@ class _CategoryGridCard extends StatelessWidget {
                         child: Icon(
                           Icons.category_outlined,
                           color: category.isActive
-                              ? AppColors.primary
+                              ? primaryColor
                               : AppColors.textSecondaryColor(context),
                           size: 25,
                         ),
@@ -1569,6 +1587,8 @@ Widget _premiumTextField(
 }
 
 InputDecoration _inputDecoration(BuildContext context, String label) {
+  final primaryColor = AppColors.primaryColor(context);
+
   return InputDecoration(
     labelText: label,
     labelStyle: TextStyle(color: AppColors.textSecondaryColor(context)),
@@ -1590,7 +1610,7 @@ InputDecoration _inputDecoration(BuildContext context, String label) {
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: const BorderSide(color: AppColors.primary, width: 1.6),
+      borderSide: BorderSide(color: primaryColor, width: 1.6),
     ),
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
@@ -1700,6 +1720,8 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(28, 28, 28, 110),
@@ -1713,7 +1735,7 @@ class _EmptyState extends StatelessWidget {
                 color: AppColors.primarySoftBackground(context),
                 borderRadius: BorderRadius.circular(26),
               ),
-              child: Icon(icon, size: 40, color: AppColors.primary),
+              child: Icon(icon, size: 40, color: primaryColor),
             ),
             const SizedBox(height: 18),
             Text(
