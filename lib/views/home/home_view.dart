@@ -13,6 +13,8 @@ final NumberFormat _homeCurrencyFormatter = NumberFormat.currency(
   symbol: 'R\$',
 );
 
+final DateFormat _homeDateTimeFormatter = DateFormat('dd/MM/yyyy HH:mm');
+
 class HomeView extends ConsumerWidget {
   final VoidCallback? onProductsTap;
   final VoidCallback? onPurchasesTap;
@@ -73,6 +75,8 @@ class HomeView extends ConsumerWidget {
                 currentMonthTotal: currentMonthTotal,
                 inProgressPurchases: inProgressPurchases,
               ),
+              const SizedBox(height: 14),
+              _buildConnectionStatusCard(context, authState: authState),
               const SizedBox(height: 24),
               _buildSummaryCard(
                 context,
@@ -233,6 +237,142 @@ class HomeView extends ConsumerWidget {
                   child: _HeaderMetric(
                     title: 'Em andamento',
                     value: inProgressPurchases.toString(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConnectionStatusCard(
+    BuildContext context, {
+    required AuthState authState,
+  }) {
+    final session = authState.offlineSession;
+    final isOfflineMode = authState.isOfflineMode;
+    final statusColor = isOfflineMode ? AppColors.warning : AppColors.success;
+
+    final title = isOfflineMode ? 'Modo offline' : 'Sessão online';
+
+    final subtitle = isOfflineMode
+        ? 'Você está usando os dados salvos neste dispositivo.'
+        : 'Sua conta está conectada e liberada para uso offline.';
+
+    final lastAccessText = session == null
+        ? 'Último acesso: agora'
+        : 'Último acesso: ${_homeDateTimeFormatter.format(session.lastAccessAt)}';
+
+    final lastOnlineLoginText = session == null
+        ? 'Último login online: não registrado'
+        : 'Último login online: ${_homeDateTimeFormatter.format(session.lastOnlineLoginAt)}';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(15, 14, 15, 14),
+      decoration: BoxDecoration(
+        color: statusColor.withValues(
+          alpha: AppColors.isDark(context) ? 0.14 : 0.08,
+        ),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: statusColor.withValues(
+            alpha: AppColors.isDark(context) ? 0.30 : 0.18,
+          ),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: statusColor.withValues(
+                alpha: AppColors.isDark(context) ? 0.18 : 0.10,
+              ),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Icon(
+              isOfflineMode ? Icons.wifi_off_rounded : Icons.cloud_done_outlined,
+              color: statusColor,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(
+                          alpha: AppColors.isDark(context) ? 0.18 : 0.10,
+                        ),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        isOfflineMode ? 'Offline' : 'Online',
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  softWrap: true,
+                  style: TextStyle(
+                    color: AppColors.textSecondaryColor(context),
+                    fontSize: 11.5,
+                    height: 1.35,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  lastAccessText,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.textSecondaryColor(context),
+                    fontSize: 10.8,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  lastOnlineLoginText,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.textSecondaryColor(context),
+                    fontSize: 10.8,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],

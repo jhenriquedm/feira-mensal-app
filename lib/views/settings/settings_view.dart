@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../services/local_storage_service.dart';
@@ -10,6 +11,8 @@ import '../../viewmodels/auth_viewmodel.dart';
 import '../../viewmodels/products_viewmodel.dart';
 import '../../viewmodels/purchases_viewmodel.dart';
 import '../../viewmodels/theme_viewmodel.dart';
+
+final DateFormat _settingsDateTimeFormatter = DateFormat('dd/MM/yyyy HH:mm');
 
 class _SettingsTexts {
   static const title = 'Ajustes';
@@ -19,6 +22,18 @@ class _SettingsTexts {
   static const userConnected = 'Usuário conectado';
   static const onlineAccess = 'Acesso online';
   static const offlineAccess = 'Acesso offline';
+  static const syncSection = 'Sincronização e acesso';
+  static const syncOnlineTitle = 'Sessão online';
+  static const syncOfflineTitle = 'Modo offline';
+  static const syncOnlineSubtitle =
+      'Sua conta está conectada e liberada para uso offline neste dispositivo.';
+  static const syncOfflineSubtitle =
+      'Você está usando os dados salvos neste dispositivo.';
+  static const lastAccess = 'Último acesso';
+  static const lastOnlineLogin = 'Último login online';
+  static const firstOnlineLogin = 'Primeiro login online';
+  static const offlineEnabled = 'Offline liberado';
+  static const offlineNotEnabled = 'Offline não liberado';
   static const editProfile = 'Editar perfil';
   static const profileNameTitle = 'Nome do perfil';
   static const profileNameSubtitle =
@@ -64,9 +79,9 @@ class _SettingsTexts {
       'Encerra a sessão atual e volta para a tela de login. Seus dados continuam preservados.';
 
   static const aboutSection = 'Sobre o app';
-  static const appName = 'Feira Mensal';
+  static const appName = 'Feira Fácil';
   static const appDescription =
-      'Controle de compras de mercado, produtos, categorias e relatórios.';
+      'Controle simples de compras de mercado, produtos, categorias e relatórios.';
 
   static const organizationTitle = 'Organização';
   static const organizationDescription =
@@ -183,6 +198,11 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                         onSave: _saveProfileName,
                       ),
                     ],
+                    const SizedBox(height: 16),
+                    _SettingsSection(
+                      title: _SettingsTexts.syncSection,
+                      child: _SyncStatusCard(authState: authState),
+                    ),
                     const SizedBox(height: 16),
                   ],
                   _AccountSummaryCard(
@@ -934,6 +954,221 @@ class _ProfileFormPanelState extends State<_ProfileFormPanel> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SyncStatusCard extends StatelessWidget {
+  final AuthState authState;
+
+  const _SyncStatusCard({required this.authState});
+
+  @override
+  Widget build(BuildContext context) {
+    final session = authState.offlineSession;
+    final isOfflineMode = authState.isOfflineMode;
+    final statusColor = isOfflineMode ? AppColors.warning : AppColors.success;
+
+    final title = isOfflineMode
+        ? _SettingsTexts.syncOfflineTitle
+        : _SettingsTexts.syncOnlineTitle;
+
+    final subtitle = isOfflineMode
+        ? _SettingsTexts.syncOfflineSubtitle
+        : _SettingsTexts.syncOnlineSubtitle;
+
+    final canUseOffline = session?.canUseOffline ?? false;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(15, 15, 15, 14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceColor(context),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.borderColor(context)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(
+                    alpha: AppColors.isDark(context) ? 0.18 : 0.10,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  isOfflineMode
+                      ? Icons.wifi_off_rounded
+                      : Icons.cloud_done_outlined,
+                  color: statusColor,
+                  size: 23,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: AppColors.textPrimaryColor(context),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: AppColors.textSecondaryColor(context),
+                        fontSize: 11.5,
+                        height: 1.35,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 7,
+                ),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(
+                    alpha: AppColors.isDark(context) ? 0.18 : 0.10,
+                  ),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: statusColor.withValues(
+                      alpha: AppColors.isDark(context) ? 0.30 : 0.20,
+                    ),
+                  ),
+                ),
+                child: Text(
+                  isOfflineMode ? 'Offline' : 'Online',
+                  style: TextStyle(
+                    color: statusColor,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _SyncInfoChip(
+                icon: Icons.history_rounded,
+                label: _SettingsTexts.lastAccess,
+                value: session == null
+                    ? 'Agora'
+                    : _formatSettingsDateTime(session.lastAccessAt),
+              ),
+              _SyncInfoChip(
+                icon: Icons.cloud_done_outlined,
+                label: _SettingsTexts.lastOnlineLogin,
+                value: session == null
+                    ? 'Não registrado'
+                    : _formatSettingsDateTime(session.lastOnlineLoginAt),
+              ),
+              _SyncInfoChip(
+                icon: Icons.login_rounded,
+                label: _SettingsTexts.firstOnlineLogin,
+                value: session == null
+                    ? 'Não registrado'
+                    : _formatSettingsDateTime(session.firstOnlineLoginAt),
+              ),
+              _SyncInfoChip(
+                icon: canUseOffline
+                    ? Icons.check_circle_outline_rounded
+                    : Icons.info_outline_rounded,
+                label: 'Uso offline',
+                value: canUseOffline
+                    ? _SettingsTexts.offlineEnabled
+                    : _SettingsTexts.offlineNotEnabled,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SyncInfoChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _SyncInfoChip({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
+    return Container(
+      constraints: const BoxConstraints(minWidth: 140),
+      padding: const EdgeInsets.fromLTRB(11, 9, 11, 9),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoftColor(context),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderColor(context)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: primaryColor, size: 16),
+          const SizedBox(width: 7),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.textSecondaryColor(context),
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.textPrimaryColor(context),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1719,6 +1954,10 @@ class _SettingsConfirmationOverlay extends StatelessWidget {
       ),
     );
   }
+}
+
+String _formatSettingsDateTime(DateTime value) {
+  return _settingsDateTimeFormatter.format(value);
 }
 
 InputDecoration _settingsInputDecoration(BuildContext context, String label) {
