@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -16,6 +17,18 @@ class _SettingsTexts {
       'Gerencie sua conta, preferências e informações do app.';
 
   static const userConnected = 'Usuário conectado';
+  static const onlineAccess = 'Acesso online';
+  static const offlineAccess = 'Acesso offline';
+  static const editProfile = 'Editar perfil';
+  static const profileNameTitle = 'Nome do perfil';
+  static const profileNameSubtitle =
+      'Atualize o nome exibido na conta e na saudação do app.';
+  static const nameLabel = 'Nome';
+  static const emailLabel = 'E-mail';
+  static const save = 'Salvar';
+  static const profileUpdateSuccess = 'Perfil atualizado com sucesso.';
+  static const profileOfflineInfo =
+      'Para editar o nome, conecte-se à internet e entre novamente na conta.';
   static const accountSummaryTitle = 'Resumo da conta';
   static const accountSummarySubtitle =
       'Acompanhe os dados cadastrados e gerencie suas informações.';
@@ -102,6 +115,8 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
   String? _feedbackMessage;
   bool _feedbackIsError = false;
   bool _isConfirmingAction = false;
+  bool _isProfileFormVisible = false;
+  bool _isSavingProfile = false;
   Timer? _feedbackTimer;
 
   @override
@@ -154,7 +169,20 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                     _CurrentUserCard(
                       name: currentUser.name,
                       email: currentUser.email,
+                      isOfflineMode: authState.isOfflineMode,
+                      onEdit: _openProfileForm,
                     ),
+                    if (_isProfileFormVisible) ...[
+                      const SizedBox(height: 12),
+                      _ProfileFormPanel(
+                        name: currentUser.name,
+                        email: currentUser.email,
+                        isOfflineMode: authState.isOfflineMode,
+                        isSaving: _isSavingProfile,
+                        onCancel: _closeProfileForm,
+                        onSave: _saveProfileName,
+                      ),
+                    ],
                     const SizedBox(height: 16),
                   ],
                   _AccountSummaryCard(
@@ -282,6 +310,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
     setState(() {
       _confirmationAction = action;
       _isConfirmingAction = false;
+      _isProfileFormVisible = false;
     });
   }
 
@@ -290,6 +319,56 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
       _confirmationAction = null;
       _isConfirmingAction = false;
     });
+  }
+
+  void _openProfileForm() {
+    setState(() {
+      _isProfileFormVisible = true;
+      _confirmationAction = null;
+    });
+  }
+
+  void _closeProfileForm() {
+    if (_isSavingProfile) {
+      return;
+    }
+
+    setState(() {
+      _isProfileFormVisible = false;
+    });
+  }
+
+  Future<void> _saveProfileName(String name) async {
+    if (_isSavingProfile) {
+      return;
+    }
+
+    setState(() {
+      _isSavingProfile = true;
+    });
+
+    final errorMessage = await ref
+        .read(authProvider.notifier)
+        .updateProfileName(name: name);
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isSavingProfile = false;
+    });
+
+    if (errorMessage != null) {
+      _showFeedback(message: errorMessage, isError: true);
+      return;
+    }
+
+    setState(() {
+      _isProfileFormVisible = false;
+    });
+
+    _showFeedback(message: _SettingsTexts.profileUpdateSuccess, isError: false);
   }
 
   Future<void> _confirmAction() async {
@@ -458,74 +537,403 @@ class _SettingsHeader extends StatelessWidget {
 class _CurrentUserCard extends StatelessWidget {
   final String name;
   final String email;
+  final bool isOfflineMode;
+  final VoidCallback onEdit;
 
-  const _CurrentUserCard({required this.name, required this.email});
+  const _CurrentUserCard({
+    required this.name,
+    required this.email,
+    required this.isOfflineMode,
+    required this.onEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+    final connectionColor = isOfflineMode
+        ? AppColors.warning
+        : AppColors.success;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(15, 15, 15, 14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceColor(context),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.borderColor(context)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: AppColors.primarySoftBackground(context),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  Icons.person_outline_rounded,
+                  color: primaryColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _SettingsTexts.userConnected,
+                      style: TextStyle(
+                        color: AppColors.textSecondaryColor(context),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: AppColors.textPrimaryColor(context),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      email,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: AppColors.textSecondaryColor(context),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 7,
+                ),
+                decoration: BoxDecoration(
+                  color: connectionColor.withValues(
+                    alpha: AppColors.isDark(context) ? 0.18 : 0.10,
+                  ),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: connectionColor.withValues(
+                      alpha: AppColors.isDark(context) ? 0.30 : 0.20,
+                    ),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isOfflineMode
+                          ? Icons.wifi_off_rounded
+                          : Icons.cloud_done_outlined,
+                      color: connectionColor,
+                      size: 15,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      isOfflineMode
+                          ? _SettingsTexts.offlineAccess
+                          : _SettingsTexts.onlineAccess,
+                      style: TextStyle(
+                        color: connectionColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: isOfflineMode ? null : onEdit,
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: const Text(_SettingsTexts.editProfile),
+              ),
+            ],
+          ),
+          if (isOfflineMode) ...[
+            const SizedBox(height: 10),
+            Text(
+              _SettingsTexts.profileOfflineInfo,
+              softWrap: true,
+              style: TextStyle(
+                color: AppColors.textSecondaryColor(context),
+                fontSize: 11.5,
+                height: 1.35,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileFormPanel extends StatefulWidget {
+  final String name;
+  final String email;
+  final bool isOfflineMode;
+  final bool isSaving;
+  final VoidCallback onCancel;
+  final ValueChanged<String> onSave;
+
+  const _ProfileFormPanel({
+    required this.name,
+    required this.email,
+    required this.isOfflineMode,
+    required this.isSaving,
+    required this.onCancel,
+    required this.onSave,
+  });
+
+  @override
+  State<_ProfileFormPanel> createState() => _ProfileFormPanelState();
+}
+
+class _ProfileFormPanelState extends State<_ProfileFormPanel> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  late final TextEditingController _nameController;
+  late final TextEditingController _emailController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.name);
+    _emailController = TextEditingController(text: widget.email);
+  }
+
+  @override
+  void didUpdateWidget(covariant _ProfileFormPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.name != widget.name) {
+      _nameController.text = widget.name;
+    }
+
+    if (oldWidget.email != widget.email) {
+      _emailController.text = widget.email;
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    FocusScope.of(context).unfocus();
+
+    if (widget.isOfflineMode || widget.isSaving) {
+      return;
+    }
+
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    widget.onSave(_nameController.text);
+  }
 
   @override
   Widget build(BuildContext context) {
     final primaryColor = AppColors.primaryColor(context);
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       decoration: BoxDecoration(
         color: AppColors.surfaceColor(context),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: AppColors.borderColor(context)),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: AppColors.primarySoftBackground(context),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(
-              Icons.person_outline_rounded,
-              color: primaryColor,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Form(
+        key: _formKey,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Text(
-                  _SettingsTexts.userConnected,
-                  style: TextStyle(
-                    color: AppColors.textSecondaryColor(context),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.primarySoftBackground(context),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(
+                    Icons.manage_accounts_outlined,
+                    color: primaryColor,
+                    size: 22,
                   ),
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: AppColors.textPrimaryColor(context),
-                    fontSize: 15,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  email,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: AppColors.textSecondaryColor(context),
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _SettingsTexts.profileNameTitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: AppColors.textPrimaryColor(context),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _SettingsTexts.profileNameSubtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: AppColors.textSecondaryColor(context),
+                          fontSize: 11.5,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: 14),
+            TextFormField(
+              controller: _nameController,
+              enabled: !widget.isSaving && !widget.isOfflineMode,
+              textCapitalization: TextCapitalization.words,
+              style: TextStyle(
+                color: AppColors.textPrimaryColor(context),
+                fontWeight: FontWeight.w600,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZÀ-ÿ\s]')),
+                LengthLimitingTextInputFormatter(40),
+              ],
+              decoration: _settingsInputDecoration(
+                context,
+                _SettingsTexts.nameLabel,
+              ),
+              validator: (value) {
+                final cleanedValue = value?.trim().replaceAll(
+                  RegExp(r'\s+'),
+                  ' ',
+                );
+
+                if (cleanedValue == null || cleanedValue.isEmpty) {
+                  return 'Informe seu nome.';
+                }
+
+                if (cleanedValue.length < 2) {
+                  return 'O nome deve ter pelo menos 2 caracteres.';
+                }
+
+                if (cleanedValue.length > 40) {
+                  return 'O nome deve ter no máximo 40 caracteres.';
+                }
+
+                return null;
+              },
+            ),
+            const SizedBox(height: 11),
+            TextFormField(
+              controller: _emailController,
+              readOnly: true,
+              style: TextStyle(
+                color: AppColors.textSecondaryColor(context),
+                fontWeight: FontWeight.w600,
+              ),
+              decoration:
+                  _settingsInputDecoration(
+                    context,
+                    _SettingsTexts.emailLabel,
+                  ).copyWith(
+                    suffixIcon: Icon(
+                      Icons.lock_outline_rounded,
+                      color: AppColors.textSecondaryColor(context),
+                      size: 18,
+                    ),
+                  ),
+            ),
+            if (widget.isOfflineMode) ...[
+              const SizedBox(height: 11),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(11),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(
+                    alpha: AppColors.isDark(context) ? 0.16 : 0.09,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: AppColors.warning.withValues(alpha: 0.28),
+                  ),
+                ),
+                child: const Text(
+                  _SettingsTexts.profileOfflineInfo,
+                  softWrap: true,
+                  style: TextStyle(
+                    color: AppColors.warning,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    height: 1.35,
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 13),
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: widget.isSaving ? null : widget.onCancel,
+                    child: const Text(_SettingsTexts.cancel),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: widget.isOfflineMode || widget.isSaving
+                        ? null
+                        : _submit,
+                    child: widget.isSaving
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(_SettingsTexts.save),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1311,6 +1719,43 @@ class _SettingsConfirmationOverlay extends StatelessWidget {
       ),
     );
   }
+}
+
+InputDecoration _settingsInputDecoration(BuildContext context, String label) {
+  final primaryColor = AppColors.primaryColor(context);
+
+  return InputDecoration(
+    labelText: label,
+    labelStyle: TextStyle(color: AppColors.textSecondaryColor(context)),
+    hintStyle: TextStyle(
+      color: AppColors.textSecondaryColor(context).withValues(alpha: 0.75),
+    ),
+    filled: true,
+    isDense: true,
+    fillColor: AppColors.surfaceSoftColor(context),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide(color: AppColors.borderColor(context)),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide(color: primaryColor, width: 1.6),
+    ),
+    disabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide(color: AppColors.borderColor(context)),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: AppColors.danger, width: 1.4),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: AppColors.danger, width: 1.6),
+    ),
+  );
 }
 
 enum _SettingsConfirmationAction {

@@ -63,7 +63,7 @@ class AuthViewModel extends StateNotifier<AuthState> {
     required String password,
     required String confirmPassword,
   }) async {
-    final cleanedName = name.trim();
+    final cleanedName = name.trim().replaceAll(RegExp(r'\s+'), ' ');
     final cleanedEmail = email.trim().toLowerCase();
     final cleanedPassword = password.trim();
     final cleanedConfirmPassword = confirmPassword.trim();
@@ -191,6 +191,65 @@ class AuthViewModel extends StateNotifier<AuthState> {
       isLoading: false,
       isOfflineMode: false,
     );
+  }
+
+  Future<String?> updateProfileName({required String name}) async {
+    final cleanedName = name.trim().replaceAll(RegExp(r'\s+'), ' ');
+
+    final validationMessage = _validateName(cleanedName);
+
+    if (validationMessage != null) {
+      return validationMessage;
+    }
+
+    final currentAppUser = state.currentUser;
+
+    if (currentAppUser == null) {
+      return 'Não foi possível identificar a conta atual.';
+    }
+
+    if (state.isOfflineMode) {
+      return 'Para alterar o nome, conecte-se à internet e tente novamente.';
+    }
+
+    final firebaseUser = _firebaseAuth.currentUser;
+
+    if (firebaseUser == null) {
+      return 'Para alterar o nome, faça login novamente com internet.';
+    }
+
+    try {
+      await firebaseUser.updateDisplayName(cleanedName);
+      await firebaseUser.reload();
+
+      final refreshedUser = _firebaseAuth.currentUser ?? firebaseUser;
+      final updatedAppUser = _mapFirebaseUser(refreshedUser);
+      final offlineSession = await _buildOfflineSession(updatedAppUser);
+
+      await LocalStorageService.saveOfflineSession(offlineSession);
+
+      if (!mounted) {
+        return null;
+      }
+
+      state = state.copyWith(
+        users: const [],
+        currentUser: updatedAppUser,
+        isLoading: false,
+        isOfflineMode: false,
+        offlineSession: offlineSession,
+      );
+
+      return null;
+    } on FirebaseAuthException catch (error) {
+      if (error.code == 'network-request-failed') {
+        return 'Sem conexão. Conecte-se à internet para alterar o nome.';
+      }
+
+      return _mapFirebaseAuthError(error);
+    } catch (_) {
+      return 'Não foi possível atualizar o perfil. Verifique sua conexão e tente novamente.';
+    }
   }
 
   Future<void> _loadSession() async {
@@ -346,16 +405,10 @@ class AuthViewModel extends StateNotifier<AuthState> {
     required String password,
     required String confirmPassword,
   }) {
-    if (name.isEmpty) {
-      return 'Informe seu nome.';
-    }
+    final nameValidationMessage = _validateName(name);
 
-    if (name.length < 2) {
-      return 'O nome deve ter pelo menos 2 caracteres.';
-    }
-
-    if (name.length > 40) {
-      return 'O nome deve ter no máximo 40 caracteres.';
+    if (nameValidationMessage != null) {
+      return nameValidationMessage;
     }
 
     if (!_isValidEmail(email)) {
@@ -372,6 +425,28 @@ class AuthViewModel extends StateNotifier<AuthState> {
 
     if (password != confirmPassword) {
       return 'As senhas não conferem.';
+    }
+
+    return null;
+  }
+
+  String? _validateName(String name) {
+    if (name.isEmpty) {
+      return 'Informe seu nome.';
+    }
+
+    if (name.length < 2) {
+      return 'O nome deve ter pelo menos 2 caracteres.';
+    }
+
+    if (name.length > 40) {
+      return 'O nome deve ter no máximo 40 caracteres.';
+    }
+
+    final hasInvalidCharacters = RegExp(r'[^a-zA-ZÀ-ÿ\s]').hasMatch(name);
+
+    if (hasInvalidCharacters) {
+      return 'Use apenas letras e espaços no nome.';
     }
 
     return null;
