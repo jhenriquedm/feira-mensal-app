@@ -126,6 +126,8 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
       (sum, purchase) => sum + purchase.items.length,
     );
 
+    final primaryColor = AppColors.primaryColor(context);
+
     return Stack(
       children: [
         Column(
@@ -181,7 +183,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                           icon: Icons.restart_alt_rounded,
                           title: _SettingsTexts.restoreCategoriesTitle,
                           subtitle: _SettingsTexts.restoreCategoriesSubtitle,
-                          foregroundColor: AppColors.primary,
+                          foregroundColor: primaryColor,
                           onTap: () {
                             _openConfirmation(
                               _SettingsConfirmationAction
@@ -194,7 +196,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                           icon: Icons.cleaning_services_outlined,
                           title: _SettingsTexts.clearDeviceDataTitle,
                           subtitle: _SettingsTexts.clearDeviceDataSubtitle,
-                          foregroundColor: AppColors.primary,
+                          foregroundColor: primaryColor,
                           onTap: () {
                             _openConfirmation(
                               _SettingsConfirmationAction.clearDeviceData,
