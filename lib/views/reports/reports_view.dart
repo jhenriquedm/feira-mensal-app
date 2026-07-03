@@ -647,6 +647,8 @@ class _ReportsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
@@ -684,8 +686,8 @@ class _ReportsHeader extends StatelessWidget {
                   icon: Icons.receipt_long_rounded,
                   title: 'Compras analisadas',
                   value: totalPurchases.toString(),
-                  foregroundColor: AppColors.primary,
-                  backgroundColor: AppColors.primary.withValues(
+                  foregroundColor: primaryColor,
+                  backgroundColor: primaryColor.withValues(
                     alpha: AppColors.isDark(context) ? 0.18 : 0.10,
                   ),
                 ),
@@ -710,12 +712,12 @@ class _ReportsHeader extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(
+                color: primaryColor.withValues(
                   alpha: AppColors.isDark(context) ? 0.14 : 0.08,
                 ),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: AppColors.primary.withValues(
+                  color: primaryColor.withValues(
                     alpha: AppColors.isDark(context) ? 0.28 : 0.16,
                   ),
                 ),
@@ -726,14 +728,14 @@ class _ReportsHeader extends StatelessWidget {
                     width: 38,
                     height: 38,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(
+                      color: primaryColor.withValues(
                         alpha: AppColors.isDark(context) ? 0.18 : 0.12,
                       ),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.payments_outlined,
-                      color: AppColors.primary,
+                      color: primaryColor,
                       size: 20,
                     ),
                   ),
@@ -755,8 +757,8 @@ class _ReportsHeader extends StatelessWidget {
                           _reportCurrencyFormatter.format(totalAmount),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.primary,
+                          style: TextStyle(
+                            color: primaryColor,
                             fontSize: 17,
                             fontWeight: FontWeight.w900,
                           ),
@@ -868,6 +870,8 @@ class _ReportsFilterPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Card(
       color: AppColors.surfaceColor(context),
       child: Padding(
@@ -877,11 +881,7 @@ class _ReportsFilterPanel extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(
-                  Icons.filter_alt_outlined,
-                  color: AppColors.primary,
-                  size: 21,
-                ),
+                Icon(Icons.filter_alt_outlined, color: primaryColor, size: 21),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -983,6 +983,8 @@ class _InsightsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return _ReportSection(
       title: _ReportsTexts.smartSummary,
       child: Column(
@@ -1008,7 +1010,7 @@ class _InsightsPanel extends StatelessWidget {
                           insights.topPurchase!.total,
                         ),
                         subtitle: insights.topPurchase!.subtitle,
-                        color: AppColors.primary,
+                        color: primaryColor,
                       ),
                     ),
                   if (insights.topMarket != null)
@@ -1050,7 +1052,7 @@ class _InsightsPanel extends StatelessWidget {
                           insights.topProductByTotal!.total,
                         ),
                         subtitle: insights.topProductByTotal!.subtitle,
-                        color: AppColors.primary,
+                        color: primaryColor,
                       ),
                     ),
                   if (insights.mostExpensiveRecord != null)
@@ -1099,16 +1101,18 @@ class _InsightSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(
+        color: primaryColor.withValues(
           alpha: AppColors.isDark(context) ? 0.14 : 0.09,
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppColors.primary.withValues(
+          color: primaryColor.withValues(
             alpha: AppColors.isDark(context) ? 0.30 : 0.22,
           ),
         ),
@@ -1120,14 +1124,14 @@ class _InsightSummaryCard extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(
+              color: primaryColor.withValues(
                 alpha: AppColors.isDark(context) ? 0.18 : 0.13,
               ),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.auto_graph_rounded,
-              color: AppColors.primary,
+              color: primaryColor,
               size: 21,
             ),
           ),
@@ -1238,6 +1242,8 @@ class _MetricsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     final total = records.fold<double>(
       0,
       (sum, record) => sum + record.item.total,
@@ -1274,7 +1280,7 @@ class _MetricsGrid extends StatelessWidget {
                 icon: Icons.payments_outlined,
                 label: 'Total gasto',
                 value: _reportCurrencyFormatter.format(total),
-                color: AppColors.primary,
+                color: primaryColor,
               ),
             ),
             SizedBox(
@@ -1292,7 +1298,7 @@ class _MetricsGrid extends StatelessWidget {
                 icon: Icons.storefront_outlined,
                 label: 'Mercados',
                 value: marketsCount.toString(),
-                color: AppColors.primary,
+                color: primaryColor,
               ),
             ),
             SizedBox(
@@ -1403,6 +1409,8 @@ class _PeriodComparisonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     final itemsLabel = period.itemsCount == 1 ? 'item' : 'itens';
     final purchasesLabel = period.purchasesCount == 1 ? 'compra' : 'compras';
     final variationColor = _variationColor(context, period.variationType);
@@ -1469,8 +1477,8 @@ class _PeriodComparisonCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.right,
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: primaryColor,
                     fontSize: 14,
                     fontWeight: FontWeight.w900,
                   ),
@@ -1531,7 +1539,7 @@ class _PeriodComparisonCard extends StatelessWidget {
       case _PeriodVariationType.neutral:
         return AppColors.textSecondaryColor(context);
       case _PeriodVariationType.noPrevious:
-        return AppColors.primary;
+        return AppColors.primaryColor(context);
     }
   }
 
@@ -1560,6 +1568,8 @@ class _GroupSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Card(
       color: AppColors.surfaceColor(context),
       child: Padding(
@@ -1595,7 +1605,7 @@ class _GroupSelector extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: isSelected
-                            ? AppColors.primary
+                            ? primaryColor
                             : AppColors.textSecondaryColor(context),
                         fontSize: 10.5,
                         fontWeight: FontWeight.w800,
@@ -1641,6 +1651,8 @@ class _GroupReportCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     final itemsLabel = group.itemsCount == 1 ? 'item' : 'itens';
     final purchasesLabel = group.purchasesCount == 1 ? 'compra' : 'compras';
 
@@ -1660,11 +1672,7 @@ class _GroupReportCard extends StatelessWidget {
               color: AppColors.primarySoftBackground(context),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(
-              Icons.bar_chart_rounded,
-              color: AppColors.primary,
-              size: 22,
-            ),
+            child: Icon(Icons.bar_chart_rounded, color: primaryColor, size: 22),
           ),
           const SizedBox(width: 11),
           Expanded(
@@ -1712,8 +1720,8 @@ class _GroupReportCard extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                color: AppColors.primary,
+              style: TextStyle(
+                color: primaryColor,
                 fontSize: 14,
                 fontWeight: FontWeight.w900,
               ),
@@ -1753,6 +1761,8 @@ class _ReportItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
       decoration: BoxDecoration(
@@ -1765,10 +1775,10 @@ class _ReportItemCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.shopping_basket_outlined,
                 size: 18,
-                color: AppColors.primary,
+                color: primaryColor,
               ),
               const SizedBox(width: 7),
               Expanded(
@@ -1790,8 +1800,8 @@ class _ReportItemCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.right,
-                  style: const TextStyle(
-                    color: AppColors.primary,
+                  style: TextStyle(
+                    color: primaryColor,
                     fontSize: 14,
                     fontWeight: FontWeight.w900,
                   ),
@@ -1862,6 +1872,8 @@ class _EmptyReportsState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = AppColors.primaryColor(context);
+
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(30, 30, 30, 100),
@@ -1875,10 +1887,10 @@ class _EmptyReportsState extends StatelessWidget {
                 color: AppColors.primarySoftBackground(context),
                 borderRadius: BorderRadius.circular(27),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.bar_chart_rounded,
                 size: 40,
-                color: AppColors.primary,
+                color: primaryColor,
               ),
             ),
             const SizedBox(height: 20),
@@ -2268,6 +2280,8 @@ String _formatQuantity(double value) {
 }
 
 InputDecoration _reportInputDecoration(BuildContext context, String label) {
+  final primaryColor = AppColors.primaryColor(context);
+
   return InputDecoration(
     labelText: label,
     labelStyle: TextStyle(color: AppColors.textSecondaryColor(context)),
@@ -2285,7 +2299,7 @@ InputDecoration _reportInputDecoration(BuildContext context, String label) {
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: const BorderSide(color: AppColors.primary, width: 1.6),
+      borderSide: BorderSide(color: primaryColor, width: 1.6),
     ),
   );
 }
