@@ -41,6 +41,37 @@ class PurchasesState {
     return [...purchases, ...deletedPurchases];
   }
 
+  int get pendingPurchasesSyncCount {
+    return allPurchasesForStorage.where((purchase) {
+      return purchase.syncStatus.hasPendingChanges;
+    }).length;
+  }
+
+  int get pendingSyncCount {
+    return pendingPurchasesSyncCount;
+  }
+
+  bool get hasPendingSyncChanges {
+    return pendingSyncCount > 0;
+  }
+
+  DateTime? get lastSyncedAt {
+    final syncDates = allPurchasesForStorage
+        .map((purchase) => purchase.lastSyncedAt)
+        .whereType<DateTime>()
+        .toList();
+
+    if (syncDates.isEmpty) {
+      return null;
+    }
+
+    syncDates.sort((first, second) {
+      return second.compareTo(first);
+    });
+
+    return syncDates.first;
+  }
+
   PurchasesState copyWith({
     List<PurchaseModel>? purchases,
     List<PurchaseModel>? deletedPurchases,

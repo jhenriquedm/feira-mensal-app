@@ -54,6 +54,43 @@ class ProductsState {
     return [...products, ...deletedProducts];
   }
 
+  int get pendingCategoriesSyncCount {
+    return allCategoriesForStorage.where((category) {
+      return category.syncStatus.hasPendingChanges;
+    }).length;
+  }
+
+  int get pendingProductsSyncCount {
+    return allProductsForStorage.where((product) {
+      return product.syncStatus.hasPendingChanges;
+    }).length;
+  }
+
+  int get pendingSyncCount {
+    return pendingCategoriesSyncCount + pendingProductsSyncCount;
+  }
+
+  bool get hasPendingSyncChanges {
+    return pendingSyncCount > 0;
+  }
+
+  DateTime? get lastSyncedAt {
+    final syncDates = [
+      ...allCategoriesForStorage.map((category) => category.lastSyncedAt),
+      ...allProductsForStorage.map((product) => product.lastSyncedAt),
+    ].whereType<DateTime>().toList();
+
+    if (syncDates.isEmpty) {
+      return null;
+    }
+
+    syncDates.sort((first, second) {
+      return second.compareTo(first);
+    });
+
+    return syncDates.first;
+  }
+
   ProductsState copyWith({
     List<CategoryModel>? categories,
     List<ProductModel>? products,

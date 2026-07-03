@@ -23,10 +23,7 @@ class _SettingsTexts {
   static const onlineAccess = 'Acesso online';
   static const offlineAccess = 'Acesso offline';
   static const syncSection = 'Sincronização e acesso';
-  static const syncOnlineTitle = 'Sessão online';
   static const syncOfflineTitle = 'Modo offline';
-  static const syncOnlineSubtitle =
-      'Sua conta está conectada e liberada para uso offline neste dispositivo.';
   static const syncOfflineSubtitle =
       'Você está usando os dados salvos neste dispositivo.';
   static const lastAccess = 'Último acesso';
@@ -201,7 +198,11 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                     const SizedBox(height: 16),
                     _SettingsSection(
                       title: _SettingsTexts.syncSection,
-                      child: _SyncStatusCard(authState: authState),
+                      child: _SyncStatusCard(
+                        authState: authState,
+                        productsState: productsState,
+                        purchasesState: purchasesState,
+                      ),
                     ),
                     const SizedBox(height: 16),
                   ],
@@ -961,22 +962,57 @@ class _ProfileFormPanelState extends State<_ProfileFormPanel> {
 
 class _SyncStatusCard extends StatelessWidget {
   final AuthState authState;
+  final ProductsState productsState;
+  final PurchasesState purchasesState;
 
-  const _SyncStatusCard({required this.authState});
+  const _SyncStatusCard({
+    required this.authState,
+    required this.productsState,
+    required this.purchasesState,
+  });
 
   @override
   Widget build(BuildContext context) {
     final session = authState.offlineSession;
     final isOfflineMode = authState.isOfflineMode;
-    final statusColor = isOfflineMode ? AppColors.warning : AppColors.success;
+    final pendingProductsCount = productsState.pendingProductsSyncCount;
+    final pendingCategoriesCount = productsState.pendingCategoriesSyncCount;
+    final pendingPurchasesCount = purchasesState.pendingPurchasesSyncCount;
+    final pendingItemsCount =
+        pendingProductsCount + pendingCategoriesCount + pendingPurchasesCount;
+    final hasPendingChanges = pendingItemsCount > 0;
+    final lastSyncedAt = _latestSettingsDate([
+      productsState.lastSyncedAt,
+      purchasesState.lastSyncedAt,
+    ]);
 
-    final title = isOfflineMode
-        ? _SettingsTexts.syncOfflineTitle
-        : _SettingsTexts.syncOnlineTitle;
+    final Color statusColor;
+    final IconData statusIcon;
+    final String title;
+    final String subtitle;
+    final String badgeLabel;
 
-    final subtitle = isOfflineMode
-        ? _SettingsTexts.syncOfflineSubtitle
-        : _SettingsTexts.syncOnlineSubtitle;
+    if (isOfflineMode) {
+      statusColor = AppColors.warning;
+      statusIcon = Icons.wifi_off_rounded;
+      title = _SettingsTexts.syncOfflineTitle;
+      subtitle = hasPendingChanges
+          ? 'Você está offline e possui alterações aguardando sincronização.'
+          : _SettingsTexts.syncOfflineSubtitle;
+      badgeLabel = 'Offline';
+    } else if (hasPendingChanges) {
+      statusColor = AppColors.warning;
+      statusIcon = Icons.sync_problem_rounded;
+      title = 'Alterações pendentes';
+      subtitle = 'Existem dados locais aguardando sincronização com a nuvem.';
+      badgeLabel = 'Pendente';
+    } else {
+      statusColor = AppColors.success;
+      statusIcon = Icons.cloud_done_outlined;
+      title = 'Tudo sincronizado';
+      subtitle = 'Sua conta está online e os dados estão atualizados na nuvem.';
+      badgeLabel = 'Sincronizado';
+    }
 
     final canUseOffline = session?.canUseOffline ?? false;
 
@@ -1002,13 +1038,7 @@ class _SyncStatusCard extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(
-                  isOfflineMode
-                      ? Icons.wifi_off_rounded
-                      : Icons.cloud_done_outlined,
-                  color: statusColor,
-                  size: 23,
-                ),
+                child: Icon(statusIcon, color: statusColor, size: 23),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1058,7 +1088,7 @@ class _SyncStatusCard extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  isOfflineMode ? 'Offline' : 'Online',
+                  badgeLabel,
                   style: TextStyle(
                     color: statusColor,
                     fontSize: 10.5,
@@ -1069,10 +1099,75 @@ class _SyncStatusCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
+            decoration: BoxDecoration(
+              color: statusColor.withValues(
+                alpha: AppColors.isDark(context) ? 0.14 : 0.08,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: statusColor.withValues(
+                  alpha: AppColors.isDark(context) ? 0.30 : 0.20,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(statusIcon, color: statusColor, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    hasPendingChanges
+                        ? '$pendingItemsCount alterações pendentes de sincronização.'
+                        : 'Nenhuma alteração pendente de sincronização.',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w900,
+                      height: 1.25,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
           Wrap(
             spacing: 10,
             runSpacing: 10,
             children: [
+              _SyncInfoChip(
+                icon: Icons.sync_rounded,
+                label: 'Última sincronização',
+                value: lastSyncedAt == null
+                    ? 'Não registrada'
+                    : _formatSettingsDateTime(lastSyncedAt),
+              ),
+              _SyncInfoChip(
+                icon: Icons.inventory_2_outlined,
+                label: 'Produtos',
+                value: pendingProductsCount == 0
+                    ? 'Sincronizados'
+                    : '$pendingProductsCount pendente(s)',
+              ),
+              _SyncInfoChip(
+                icon: Icons.category_outlined,
+                label: 'Categorias',
+                value: pendingCategoriesCount == 0
+                    ? 'Sincronizadas'
+                    : '$pendingCategoriesCount pendente(s)',
+              ),
+              _SyncInfoChip(
+                icon: Icons.receipt_long_outlined,
+                label: 'Compras',
+                value: pendingPurchasesCount == 0
+                    ? 'Sincronizadas'
+                    : '$pendingPurchasesCount pendente(s)',
+              ),
               _SyncInfoChip(
                 icon: Icons.history_rounded,
                 label: _SettingsTexts.lastAccess,
@@ -1954,6 +2049,20 @@ class _SettingsConfirmationOverlay extends StatelessWidget {
       ),
     );
   }
+}
+
+DateTime? _latestSettingsDate(List<DateTime?> dates) {
+  final validDates = dates.whereType<DateTime>().toList();
+
+  if (validDates.isEmpty) {
+    return null;
+  }
+
+  validDates.sort((first, second) {
+    return second.compareTo(first);
+  });
+
+  return validDates.first;
 }
 
 String _formatSettingsDateTime(DateTime value) {

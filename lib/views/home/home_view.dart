@@ -76,7 +76,12 @@ class HomeView extends ConsumerWidget {
                 inProgressPurchases: inProgressPurchases,
               ),
               const SizedBox(height: 14),
-              _buildConnectionStatusCard(context, authState: authState),
+              _buildConnectionStatusCard(
+                context,
+                authState: authState,
+                productsState: productsState,
+                purchasesState: purchasesState,
+              ),
               const SizedBox(height: 24),
               _buildSummaryCard(
                 context,
@@ -250,16 +255,52 @@ class HomeView extends ConsumerWidget {
   Widget _buildConnectionStatusCard(
     BuildContext context, {
     required AuthState authState,
+    required ProductsState productsState,
+    required PurchasesState purchasesState,
   }) {
     final session = authState.offlineSession;
     final isOfflineMode = authState.isOfflineMode;
-    final statusColor = isOfflineMode ? AppColors.warning : AppColors.success;
+    final pendingProductsCount = productsState.pendingSyncCount;
+    final pendingPurchasesCount = purchasesState.pendingSyncCount;
+    final pendingItemsCount = pendingProductsCount + pendingPurchasesCount;
+    final hasPendingChanges = pendingItemsCount > 0;
+    final lastSyncedAt = _latestSyncDate(productsState, purchasesState);
 
-    final title = isOfflineMode ? 'Modo offline' : 'Sessão online';
+    final Color statusColor;
+    final IconData statusIcon;
+    final String title;
+    final String subtitle;
+    final String badgeLabel;
 
-    final subtitle = isOfflineMode
-        ? 'Você está usando os dados salvos neste dispositivo.'
-        : 'Sua conta está conectada e liberada para uso offline.';
+    if (isOfflineMode) {
+      statusColor = AppColors.warning;
+      statusIcon = Icons.wifi_off_rounded;
+      title = 'Modo offline';
+      subtitle = hasPendingChanges
+          ? 'Você está offline e possui alterações aguardando sincronização.'
+          : 'Você está usando os dados salvos neste dispositivo.';
+      badgeLabel = 'Offline';
+    } else if (hasPendingChanges) {
+      statusColor = AppColors.warning;
+      statusIcon = Icons.sync_problem_rounded;
+      title = 'Alterações pendentes';
+      subtitle = 'Existem dados locais aguardando sincronização com a nuvem.';
+      badgeLabel = 'Pendente';
+    } else {
+      statusColor = AppColors.success;
+      statusIcon = Icons.cloud_done_outlined;
+      title = 'Tudo sincronizado';
+      subtitle = 'Sua conta está online e os dados estão atualizados na nuvem.';
+      badgeLabel = 'Sincronizado';
+    }
+
+    final pendingText = pendingItemsCount == 1
+        ? '1 alteração pendente'
+        : '$pendingItemsCount alterações pendentes';
+
+    final lastSyncText = lastSyncedAt == null
+        ? 'Última sincronização: ainda não registrada'
+        : 'Última sincronização: ${_homeDateTimeFormatter.format(lastSyncedAt)}';
 
     final lastAccessText = session == null
         ? 'Último acesso: agora'
@@ -295,13 +336,7 @@ class HomeView extends ConsumerWidget {
               ),
               borderRadius: BorderRadius.circular(15),
             ),
-            child: Icon(
-              isOfflineMode
-                  ? Icons.wifi_off_rounded
-                  : Icons.cloud_done_outlined,
-              color: statusColor,
-              size: 22,
-            ),
+            child: Icon(statusIcon, color: statusColor, size: 22),
           ),
           const SizedBox(width: 11),
           Expanded(
@@ -334,7 +369,7 @@ class HomeView extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
-                        isOfflineMode ? 'Offline' : 'Online',
+                        badgeLabel,
                         style: TextStyle(
                           color: statusColor,
                           fontSize: 10.5,
@@ -356,6 +391,30 @@ class HomeView extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
+                Text(
+                  hasPendingChanges
+                      ? pendingText
+                      : 'Nenhuma alteração pendente',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontSize: 10.8,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  lastSyncText,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.textSecondaryColor(context),
+                    fontSize: 10.8,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
                 Text(
                   lastAccessText,
                   maxLines: 1,
@@ -573,6 +632,26 @@ class HomeView extends ConsumerWidget {
     final topEntry = entries.first;
 
     return _CategoryHighlight(name: topEntry.key, total: topEntry.value);
+  }
+
+  DateTime? _latestSyncDate(
+    ProductsState productsState,
+    PurchasesState purchasesState,
+  ) {
+    final syncDates = [
+      productsState.lastSyncedAt,
+      purchasesState.lastSyncedAt,
+    ].whereType<DateTime>().toList();
+
+    if (syncDates.isEmpty) {
+      return null;
+    }
+
+    syncDates.sort((first, second) {
+      return second.compareTo(first);
+    });
+
+    return syncDates.first;
   }
 
   String? _getFirstName(String? fullName) {
